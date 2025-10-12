@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Verification - EENG Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #000;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .check-item {
+            margin: 20px 0;
+            padding: 15px;
+            background: #0a0a0a;
+            border-left: 4px solid #666;
+            border-radius: 5px;
+        }
+
+        .check-item.pending {
+            border-left-color: #ffaa00;
+        }
+
+        .check-item.success {
+            border-left-color: #00ff00;
+        }
+
+        .check-item.error {
+            border-left-color: #ff0000;
+            color: #ff6666;
+        }
+
+        .check-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .check-result {
+            font-size: 14px;
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+
+        button:hover {
+            background: #00cc00;
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: #0a0a0a;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .summary.success {
+            border: 2px solid #00ff00;
+        }
+
+        .summary.error {
+            border: 2px solid #ff0000;
+        }
+
+        .loading {
+            display: inline-block;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .actions button {
+            flex: 1;
+            padding: 10px;
+        }
+
+        pre {
+            background: #0a0a0a;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 EENG SETUP VERIFICATION TOOL</h1>
+        
+        <button id="startCheck" onclick="runAllChecks()">
+            START VERIFICATION
+        </button>
+
+        <div id="checksContainer"></div>
+
+        <div id="summary" style="display: none;"></div>
+
+        <div class="actions" style="display: none;" id="actions">
+            <button onclick="window.location.href='admin.html'">Open Admin Panel</button>
+            <button onclick="window.location.href='analytics.html'">Open Analytics</button>
+            <button onclick="runAllChecks()">Run Again</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        const checks = [
+            {
+                name: 'Firebase Initialization',
+                test: () => firebase.apps.length > 0,
+                successMsg: '✓ Firebase is initialized',
+                errorMsg: '✗ Firebase failed to initialize'
+            },
+            {
+                name: 'Authentication Status',
+                test: async () => {
+                    return new Promise((resolve) => {
+                        auth.onAuthStateChanged(user => {
+                            resolve({ 
+                                passed: !!user, 
+                                data: user ? user.email : null 
+                            });
+                        });
+                    });
+                },
+                successMsg: user => `✓ Logged in as: ${user}`,
+                errorMsg: '✗ Not logged in - please login first'
+            },
+            {
+                name: 'Database Connection',
+                test: async () => {
+                    try {
+                        const ref = database.ref('.info/connected');
+                        const snapshot = await ref.once('value');
+                        return snapshot.val();
+                    } catch (e) {
+                        return false;
+                    }
+                },
+                successMsg: '✓ Connected to Firebase Database',
+                errorMsg: '✗ Cannot connect to database'
+            },
+            {
+                name: 'Admin Status Check',
+                test: async () => {
+                    const user = auth.currentUser;
+                    if (!user) return false;
+                    
+                    try {
+                        const snapshot = await database.ref('users/' + user.uid).once('value');
+                        const userData = snapshot.val();
+                        return { 
+                            passed: userData && userData.isAdmin === true,
+                            data: userData
+                        };
+                    } catch (e) {
+                        return false;
+                    }
+                },
+                successMsg: '✓ You are an ADMIN',
+                errorMsg: '✗ You are NOT an admin - use make-admin.html'
+            },
+            {
+                name: 'User Data Read Test',
+                test: async () => {
+                    try {
+                        const snapshot = await database.ref('users').limitToFirst(1).once('value');
+                        return snapshot.exists();
+                    } catch (e) {
+                        return { passed: false, error: e.message };
+                    }
+                },
+                successMsg: '✓ Can read user data',
+                errorMsg: error => `✗ Cannot read users: ${error || 'Permission denied'}`
+            },
+            {
+                name: 'User Count',
+                test: async () => {
+                    try {
+                        const snapshot = await database.ref('users').once('value');
+                        const count = snapshot.numChildren();
+                        return { passed: true, data: count };
+                    } catch (e) {
+                        return { passed: false, error: e.message };
+                    }
+                },
+                successMsg: count => `✓ Found ${count} user(s) in database`,
+                errorMsg: error => `✗ Cannot count users: ${error}`
+            },
+            {
+                name: 'Download Tracking Test',
+                test: async () => {
+                    try {
+                        const snapshot = await database.ref('downloads').limitToFirst(1).once('value');
+                        const count = snapshot.exists() ? snapshot.numChildren() : 0;
+                        return { passed: true, data: count };
+                    } catch (e) {
+                        return { passed: true, data: 0 };
+                    }
+                },
+                successMsg: count => `✓ Downloads tracked: ${count > 0 ? count + ' found' : 'none yet'}`,
+                errorMsg: '✗ Download tracking not working'
+            },
+            {
+                name: 'File Structure Check',
+                test: async () => {
+                    const files = [
+                        'firebase-config.js',
+                        'admin.html',
+                        'analytics.html',
+                        'index.html',
+                        'login.html'
+                    ];
+                    
+                    const results = await Promise.all(
+                        files.map(file => 
+                            fetch(file, { method: 'HEAD' })
+                                .then(r => r.ok)
+                                .catch(() => false)
+                        )
+                    );
+                    
+                    const allExist = results.every(r => r);
+                    const missing = files.filter((f, i) => !results[i]);
+                    
+                    return { 
+                        passed: allExist, 
+                        data: missing 
+                    };
+                },
+                successMsg: '✓ All required files present',
+                errorMsg: missing => `✗ Missing files: ${missing.join(', ')}`
+            }
+        ];
+
+        let results = [];
+
+        async function runAllChecks() {
+            const container = document.getElementById('checksContainer');
+            const summary = document.getElementById('summary');
+            const actions = document.getElementById('actions');
+            const startBtn = document.getElementById('startCheck');
+            
+            container.innerHTML = '';
+            summary.style.display = 'none';
+            actions.style.display = 'none';
+            startBtn.disabled = true;
+            startBtn.textContent = 'CHECKING...';
+            
+            results = [];
+
+            for (const check of checks) {
+                const checkDiv = document.createElement('div');
+                checkDiv.className = 'check-item pending';
+                checkDiv.innerHTML = `
+                    <div class="check-title">${check.name}</div>
+                    <div class="check-result">
+                        <span class="loading">▓▓▓</span> Testing...
+                    </div>
+                `;
+                container.appendChild(checkDiv);
+
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    const result = await check.test();
+                    const passed = typeof result === 'boolean' ? result : result.passed;
+                    const data = typeof result === 'object' ? result.data : null;
+                    const error = typeof result === 'object' ? result.error : null;
+
+                    results.push({ check: check.name, passed });
+
+                    if (passed) {
+                        checkDiv.className = 'check-item success';
+                        const msg = typeof check.successMsg === 'function' 
+                            ? check.successMsg(data) 
+                            : check.successMsg;
+                        checkDiv.querySelector('.check-result').textContent = msg;
+                    } else {
+                        checkDiv.className = 'check-item error';
+                        const msg = typeof check.errorMsg === 'function' 
+                            ? check.errorMsg(error || data) 
+                            : check.errorMsg;
+                        checkDiv.querySelector('.check-result').textContent = msg;
+                    }
+                } catch (error) {
+                    results.push({ check: check.name, passed: false });
+                    checkDiv.className = 'check-item error';
+                    checkDiv.querySelector('.check-result').textContent = 
+                        `✗ Error: ${error.message}`;
+                }
+            }
+
+            showSummary();
+            startBtn.disabled = false;
+            startBtn.textContent = 'RUN VERIFICATION AGAIN';
+            actions.style.display = 'flex';
+        }
+
+        function showSummary() {
+            const summary = document.getElementById('summary');
+            const passed = results.filter(r => r.passed).length;
+            const total = results.length;
+            const allPassed = passed === total;
+
+            summary.className = `summary ${allPassed ? 'success' : 'error'}`;
+            summary.style.display = 'block';
+
+            if (allPassed) {
+                summary.innerHTML = `
+                    <h2 style="color: #00ff00; font-size: 24px; margin-bottom: 15px;">
+                        ✅ ALL CHECKS PASSED! (${passed}/${total})
+                    </h2>
+                    <p style="font-size: 14px; line-height: 1.8;">
+                        Your EENG admin system is fully configured and working correctly!<br>
+                        You can now access the admin panel and analytics dashboard.
+                    </p>
+                `;
+            } else {
+                const failed = results.filter(r => !r.passed);
+                summary.innerHTML = `
+                    <h2 style="color: #ff6666; font-size: 24px; margin-bottom: 15px;">
+                        ⚠️ SOME CHECKS FAILED (${passed}/${total})
+                    </h2>
+                    <p style="font-size: 14px; line-height: 1.8; margin-bottom: 15px;">
+                        Please fix the issues above before using the admin panel.
+                    </p>
+                    <div style="text-align: left; font-size: 13px;">
+                        <strong>Failed checks:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            ${failed.map(f => `<li>${f.check}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; background: #1a1a1a; border-radius: 5px;">
+                        <strong>Common Solutions:</strong>
+                        <ul style="text-align: left; padding-left: 20px; margin-top: 10px; line-height: 1.8;">
+                            <li>Not logged in → <a href="login.html" style="color: #00ff00;">Login here</a></li>
+                            <li>Not an admin → Use make-admin.html</li>
+                            <li>Cannot read data → Update Firebase rules</li>
+                            <li>Connection issues → Check internet connection</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-run on load if user is already logged in
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        const msg = document.createElement('div');
+                        msg.style.cssText = 'text-align: center; margin: 20px 0; color: #ffaa00;';
+                        msg.textContent = '👤 Logged in as: ' + user.email;
+                        document.querySelector('.container').insertBefore(
+                            msg, 
+                            document.getElementById('startCheck')
+                        );
+                    } else {
+                        const msg = document.createElement('div');
+                        msg.style.cssText = 'text-align: center; margin: 20px 0; color: #ff6666;';
+                        msg.innerHTML = '⚠️ Not logged in - <a href="login.html" style="color: #00ff00;">Login first</a>';
+                        document.querySelector('.container').insertBefore(
+                            msg, 
+                            document.getElementById('startCheck')
+                        );
+                    }
+                });
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

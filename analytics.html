@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - EENG Admin</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        h1 {
+            color: #009688;
+            font-size: 28px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #009688;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #009688, #00b09b);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card i {
+            font-size: 40px;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+
+        .stat-card h3 {
+            font-size: 36px;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background: #009688;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .export-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #009688, #00b09b);
+            transition: width 0.3s ease;
+        }
+        .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+/* MOBILE RESPONSIVENESS */
+@media screen and (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 20px 15px;
+        border-radius: 10px;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    h1 {
+        font-size: 22px;
+        text-align: center;
+    }
+
+    .stats-overview {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 18px;
+    }
+
+    .stat-card i {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .stat-card h3 {
+        font-size: 24px;
+    }
+
+    .stat-card p {
+        font-size: 12px;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .filter-group {
+        min-width: 100%;
+    }
+
+    .chart-title {
+        font-size: 18px;
+    }
+
+    /* Responsive Table */
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        font-size: 12px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    th, td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+
+    .export-buttons {
+        flex-direction: column;
+    }
+
+    .export-buttons .btn {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .stats-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+    /* Stack table rows on very small screens */
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: white;
+        padding: 10px;
+    }
+
+    td {
+        border: none;
+        position: relative;
+        padding-left: 45%;
+        text-align: right;
+        min-height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        font-weight: bold;
+        text-align: left;
+        color: #009688;
+        font-size: 11px;
+    }
+
+    td:first-child {
+        border-radius: 8px 8px 0 0;
+    }
+
+    td:last-child {
+        border-radius: 0 0 8px 8px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .btn {
+        font-size: 13px;
+        padding: 8px 15px;
+    }
+
+    .chart-container {
+        padding: 20px 15px;
+    }
+
+    .filter-section {
+        padding: 15px;
+    }
+
+    .export-section {
+        padding: 15px;
+    }
+}
+
+       
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1><i class="fa fa-bar-chart"></i> Analytics Dashboard</h1>
+                <p style="color: #666; margin-top: 5px;">Comprehensive insights and reports</p>
+            </div>
+            <div>
+                <a href="admin.html" class="btn btn-secondary">
+                    <i class="fa fa-arrow-left"></i> Back to Admin
+                </a>
+                <a href="index.html" class="btn btn-primary">
+                    <i class="fa fa-home"></i> Home
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-overview">
+            <div class="stat-card">
+                <i class="fa fa-users"></i>
+                <h3 id="totalUsersCount">0</h3>
+                <p>Total Users</p>
+            </div>
+            <div class="stat-card">
+                <i class="fa fa-download"></i>
+                <h3 id="totalDownloads">0</h3>
+                <p>Total Downloads</p>
+            </div>
+            <div class="stat-card">
+                <i class="fa fa-user-plus"></i>
+                <h3 id="newUsersWeek">0</h3>
+                <p>New Users (7 days)</p>
+            </div>
+            <div class="stat-card">
+                <i class="fa fa-clock-o"></i>
+                <h3 id="avgStudyTime">0</h3>
+                <p>Avg Study Minutes</p>
+            </div>
+            <div class="stat-card">
+                <i class="fa fa-heart"></i>
+                <h3 id="totalFavorites">0</h3>
+                <p>Total Favorites</p>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+            <h3 class="chart-title">Filters & Date Range</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Start Date</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="filter-group">
+                    <label>End Date</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="filter-group">
+                    <label>Quick Filter</label>
+                    <select id="quickFilter">
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">Last 7 Days</option>
+                        <option value="month">Last 30 Days</option>
+                        <option value="year">Last Year</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" onclick="applyFilters()">
+                        <i class="fa fa-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Most Downloaded Materials -->
+        <div class="chart-container">
+            <h3 class="chart-title">Most Downloaded Materials</h3>
+            <div id="topDownloadsLoading" class="loading">
+                <i class="fa fa-spinner fa-spin" style="font-size: 32px; color: #009688;"></i>
+                <p>Loading download statistics...</p>
+            </div>
+            <div id="topDownloadsContent" style="display: none;"></div>
+        </div>
+          <!-- Most Favorited Courses -->
+<div class="chart-container">
+    <h3 class="chart-title">Most Favorited Courses</h3>
+    <div id="topFavoritesLoading" class="loading">
+        <i class="fa fa-spinner fa-spin" style="font-size: 32px; color: #009688;"></i>
+        <p>Loading favorites statistics...</p>
+    </div>
+    <div id="topFavoritesContent" style="display: none;"></div>
+</div>
+
+        <!-- User Growth -->
+        <div class="chart-container">
+            <h3 class="chart-title">User Registration Trends</h3>
+            <div id="userGrowthContent"></div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="chart-container">
+            <h3 class="chart-title">Recent User Activity</h3>
+            <table id="activityTable">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Action</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="activityTableBody">
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px;">
+                            <i class="fa fa-spinner fa-spin" style="font-size: 24px; color: #009688;"></i>
+                            <p style="margin-top: 10px; color: #666;">Loading activity...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Export Section -->
+        <div class="export-section">
+            <h3 class="chart-title">Export Reports</h3>
+            <p style="color: #666; margin-bottom: 15px;">Download analytics data in various formats</p>
+            <div class="export-buttons">
+                <button class="btn btn-success" onclick="exportToCSV()">
+                    <i class="fa fa-file-excel-o"></i> Export to CSV
+                </button>
+                <button class="btn btn-primary" onclick="exportToJSON()">
+                    <i class="fa fa-file-code-o"></i> Export to JSON
+                </button>
+                <button class="btn btn-secondary" onclick="printReport()">
+                    <i class="fa fa-print"></i> Print Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        let allUsers = [];
+        let allDownloads = [];
+        let filteredData = { users: [], downloads: [] };
+
+        // Initialize
+        window.addEventListener('load', async () => {
+            await checkAuth();
+            await loadAnalyticsData();
+            setupFilters();
+        });
+
+        async function checkAuth() {
+            return new Promise((resolve) => {
+                auth.onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        alert('Please login first');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+
+                    const userSnapshot = await database.ref('users/' + user.uid).once('value');
+                    const userData = userSnapshot.val();
+
+                    if (!userData || !userData.isAdmin) {
+                        alert('Access denied: Admin privileges required');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    resolve();
+                });
+            });
+        }
+
+        async function loadAnalyticsData() {
+            try {
+                // Load users
+                const usersSnapshot = await database.ref('users').once('value');
+                const usersData = usersSnapshot.val();
+                
+                if (usersData) {
+                    allUsers = Object.keys(usersData).map(uid => ({
+                        uid,
+                        ...usersData[uid]
+                    }));
+                }
+
+                // Load downloads
+                const downloadsSnapshot = await database.ref('downloads').once('value');
+                const downloadsData = downloadsSnapshot.val();
+                
+                if (downloadsData) {
+                    allDownloads = Object.keys(downloadsData).map(id => ({
+                        id,
+                        ...downloadsData[id]
+                    }));
+                }
+
+                filteredData = { users: allUsers, downloads: allDownloads };
+                updateDashboard();
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                alert('Failed to load analytics data: ' + error.message);
+            }
+        }
+
+        function updateDashboard() {
+            updateStats();
+            updateTopDownloads();
+            updateTopFavorites();  // ADD THIS LINE
+            updateUserGrowth();
+            updateRecentActivity();
+        }
+
+        function updateStats() {
+            const { users, downloads } = filteredData;
+
+            // Total users
+            document.getElementById('totalUsersCount').textContent = users.length;
+
+            // Total downloads
+            document.getElementById('totalDownloads').textContent = downloads.length;
+
+            // New users in last 7 days
+            const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+            const newUsers = users.filter(u => u.createdAt && u.createdAt > weekAgo).length;
+            document.getElementById('newUsersWeek').textContent = newUsers;
+
+            // Average study time
+            const totalMinutes = users.reduce((sum, u) => sum + (u.totalMinutes || 0), 0);
+            const avgMinutes = users.length > 0 ? Math.round(totalMinutes / users.length) : 0;
+            document.getElementById('avgStudyTime').textContent = avgMinutes;
+              // Total favorites
+const totalFavorites = users.reduce((sum, u) => {
+    if (!u.favorites) return sum;
+    const count = Array.isArray(u.favorites) ? u.favorites.length : Object.keys(u.favorites).length;
+    return sum + count;
+}, 0);
+document.getElementById('totalFavorites').textContent = totalFavorites;
+        }
+
+        function updateTopDownloads() {
+            const { downloads } = filteredData;
+            const loading = document.getElementById('topDownloadsLoading');
+            const content = document.getElementById('topDownloadsContent');
+
+            if (downloads.length === 0) {
+                loading.innerHTML = '<p style="text-align: center; color: #666;">No download data available</p>';
+                return;
+            }
+
+            // Count downloads per course
+            const downloadCounts = {};
+            downloads.forEach(d => {
+                const course = d.courseName || 'Unknown';
+                downloadCounts[course] = (downloadCounts[course] || 0) + 1;
+            });
+
+            // Sort by count
+            const sorted = Object.entries(downloadCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            const maxCount = sorted[0][1];
+
+            let html = '<div>';
+            sorted.forEach(([course, count]) => {
+                const percentage = (count / maxCount) * 100;
+                html += `
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong>${course}</strong>
+                            <span>${count} downloads</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            loading.style.display = 'none';
+            content.style.display = 'block';
+            content.innerHTML = html;
+        }
+
+        function updateTopFavorites() {
+    const { users } = filteredData;
+    const loading = document.getElementById('topFavoritesLoading');
+    const content = document.getElementById('topFavoritesContent');
+
+    // Count favorites per course
+    const favoriteCounts = {};
+    
+    users.forEach(u => {
+        if (u.favorites) {
+            const favArray = Array.isArray(u.favorites) ? u.favorites : Object.values(u.favorites);
+            favArray.forEach(course => {
+                favoriteCounts[course] = (favoriteCounts[course] || 0) + 1;
+            });
+        }
+    });
+
+    if (Object.keys(favoriteCounts).length === 0) {
+        loading.innerHTML = '<p style="text-align: center; color: #666;">No favorites data available yet. Users need to add favorites first!</p>';
+        return;
+    }
+
+    // Sort by count
+    const sorted = Object.entries(favoriteCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+    const maxCount = sorted[0][1];
+
+    let html = '<div>';
+    sorted.forEach(([course, count]) => {
+        const percentage = (count / maxCount) * 100;
+        const plural = count > 1 ? 's' : '';
+        html += `
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <strong style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa fa-heart" style="color: #e74c3c;"></i>
+                        ${course}
+                    </strong>
+                    <span style="color: #666;">${count} user${plural}</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${percentage}%; background: linear-gradient(90deg, #e74c3c, #c0392b);"></div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+
+    loading.style.display = 'none';
+    content.style.display = 'block';
+    content.innerHTML = html;
+}
+
+        function updateUserGrowth() {
+            const { users } = filteredData;
+            const content = document.getElementById('userGrowthContent');
+
+            if (users.length === 0) {
+                content.innerHTML = '<p style="text-align: center; color: #666;">No user data available</p>';
+                return;
+            }
+
+            // Group by month
+            const monthlyData = {};
+            users.forEach(u => {
+                if (u.createdAt) {
+                    const date = new Date(u.createdAt);
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+                }
+            });
+
+            const sorted = Object.entries(monthlyData).sort();
+            const maxUsers = Math.max(...sorted.map(([, count]) => count));
+
+            let html = '<div>';
+            sorted.forEach(([month, count]) => {
+                const percentage = (count / maxUsers) * 100;
+                html += `
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong>${month}</strong>
+                            <span>${count} users</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            content.innerHTML = html;
+        }
+
+        function updateRecentActivity() {
+    const { users, downloads } = filteredData;
+    const tbody = document.getElementById('activityTableBody');
+
+    // Helper to get display name
+    function getUserDisplayName(user) {
+        if (!user) return 'Unknown User';
+        
+        if (user.name && user.name !== 'undefined' && user.name.trim()) {
+            return user.name;
+        } else if (user.displayName && user.displayName !== 'undefined' && user.displayName.trim()) {
+            return user.displayName;
+        } else if (user.email) {
+            let name = user.email.split('@')[0];
+            name = name.charAt(0).toUpperCase() + name.slice(1);
+            return name.replace(/[._]/g, ' ');
+        }
+        return 'Unknown User';
+    }
+
+    // Helper to get email
+    function getUserEmail(user) {
+        return user?.email || 'unknown@email.com';
+    }
+
+    // Combine activities
+    const activities = [];
+
+    users.forEach(u => {
+        if (u.lastLogin) {
+            activities.push({
+                user: getUserDisplayName(u),
+                email: getUserEmail(u),
+                action: 'Logged in',
+                time: u.lastLogin
+            });
+        }
+    });
+
+    downloads.forEach(d => {
+        const user = users.find(u => u.uid === d.userId);
+        activities.push({
+            user: getUserDisplayName(user),
+            email: getUserEmail(user),
+            action: `Downloaded: ${d.courseName || 'Unknown Material'}`,
+            time: d.timestamp || Date.now()
+        });
+    });
+
+    // Sort and display
+    activities.sort((a, b) => b.time - a.time);
+    const recent = activities.slice(0, 20);
+
+    if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No recent activity</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = recent.map(a => `
+    <tr>
+        <td data-label="User">${a.user}</td>
+        <td data-label="Email">${a.email}</td>
+        <td data-label="Action">${a.action}</td>
+        <td data-label="Time">${new Date(a.time).toLocaleString()}</td>
+    </tr>
+`).join('');
+        function setupFilters() {
+            const today = new Date();
+            document.getElementById('endDate').valueAsDate = today;
+            
+            const startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - 1);
+            document.getElementById('startDate').valueAsDate = startDate;
+
+            document.getElementById('quickFilter').addEventListener('change', function() {
+                const value = this.value;
+                const end = new Date();
+                let start = new Date();
+
+                switch(value) {
+                    case 'today':
+                        start = new Date();
+                        break;
+                    case 'week':
+                        start.setDate(start.getDate() - 7);
+                        break;
+                    case 'month':
+                        start.setMonth(start.getMonth() - 1);
+                        break;
+                    case 'year':
+                        start.setFullYear(start.getFullYear() - 1);
+                        break;
+                    case 'all':
+                        start = new Date(0);
+                        break;
+                }
+
+                if (value !== 'all') {
+                    document.getElementById('startDate').valueAsDate = start;
+                    document.getElementById('endDate').valueAsDate = end;
+                }
+            });
+        }
+
+        function applyFilters() {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            endDate.setHours(23, 59, 59, 999);
+
+            filteredData.users = allUsers.filter(u => {
+                if (!u.createdAt) return true;
+                return u.createdAt >= startDate.getTime() && u.createdAt <= endDate.getTime();
+            });
+
+            filteredData.downloads = allDownloads.filter(d => {
+                if (!d.timestamp) return true;
+                return d.timestamp >= startDate.getTime() && d.timestamp <= endDate.getTime();
+            });
+
+            updateDashboard();
+        }
+
+        function exportToCSV() {
+            const { users, downloads } = filteredData;
+            
+            let csv = 'Users Report\n';
+            csv += 'Name,Email,Sign-up Method,Join Date,Study Minutes,Sessions\n';
+            users.forEach(u => {
+                csv += `"${u.name || 'N/A'}","${u.email}","${u.photoURL ? 'Google' : 'Email'}","${new Date(u.createdAt).toLocaleDateString()}","${u.totalMinutes || 0}","${u.sessionsCompleted || 0}"\n`;
+            });
+
+            csv += '\n\nDownloads Report\n';
+            csv += 'Course Name,User Email,Download Date\n';
+            downloads.forEach(d => {
+                const user = users.find(u => u.uid === d.userId);
+                csv += `"${d.courseName}","${user ? user.email : 'Unknown'}","${new Date(d.timestamp).toLocaleString()}"\n`;
+            });
+
+            downloadFile(csv, 'analytics-report.csv', 'text/csv');
+        }
+
+        function exportToJSON() {
+            const data = {
+                generatedAt: new Date().toISOString(),
+                users: filteredData.users,
+                downloads: filteredData.downloads,
+                statistics: {
+                    totalUsers: filteredData.users.length,
+                    totalDownloads: filteredData.downloads.length
+                }
+            };
+
+            downloadFile(JSON.stringify(data, null, 2), 'analytics-report.json', 'application/json');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function printReport() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

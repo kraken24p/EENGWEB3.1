@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - EENG Class of 2028</title>
+    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+     <!-- Firebase SDKs -->
+<!-- Firebase SDKs - Replace Firestore with Realtime Database -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-background"></div>
+        
+        <!-- Login Form -->
+        <div class="login-card" id="loginCard">
+            <div class="login-header">
+                <img src="images/technology_18655646.gif" alt="EENG Logo" class="login-logo">
+                <h1>Welcome Back</h1>
+                <p>Sign in to access your engineering hub</p>
+            </div>
+            
+            <form class="login-form" id="loginForm">
+                <div class="input-group">
+                    <i class="fa fa-envelope"></i>
+                    <input type="email" id="loginEmail" placeholder="Email Address" required>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                    <button type="button" class="toggle-password" data-target="loginPassword">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="login-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password" id="showForgotPassword">Forgot password?</a>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    Sign In <i class="fa fa-arrow-right"></i>
+                </button>
+                
+                <div class="form-divider">
+                    <span>or</span>
+                </div>
+                
+                <button type="button" class="social-btn google">
+                    <i class="fa fa-google"></i> Continue with Google
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>Don't have an account? <a href="#" id="showSignup">Sign up</a></p>
+            </div>
+        </div>
+
+        <!-- Signup Form -->
+        <div class="login-card" id="signupCard" style="display: none;">
+            <div class="login-header">
+                <img src="images/technology_18655646.gif" alt="EENG Logo" class="login-logo">
+                <h1>Create Account</h1>
+                <p>Join the engineering community</p>
+            </div>
+            
+            <form class="login-form" id="signupForm">
+                <div class="input-group">
+                    <i class="fa fa-user"></i>
+                    <input type="text" id="signupName" placeholder="Full Name" required>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fa fa-envelope"></i>
+                    <input type="email" id="signupEmail" placeholder="Email Address" required>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" id="signupPassword" placeholder="Password (min 6 characters)" required minlength="6">
+                    <button type="button" class="toggle-password" data-target="signupPassword">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                    <button type="button" class="toggle-password" data-target="confirmPassword">
+                        <i class="fa fa-eye"></i>
+                    </button>
+                </div>
+                
+                <label class="remember-me" style="margin-bottom: 20px;">
+                    <input type="checkbox" required>
+                    <span>I agree to the <a href="#" style="color: #009688;">Terms & Conditions</a></span>
+                </label>
+                
+                <button type="submit" class="login-btn">
+                    Create Account <i class="fa fa-arrow-right"></i>
+                </button>
+                
+                <div class="form-divider">
+                    <span>or</span>
+                </div>
+                
+                <button type="button" class="social-btn google">
+                    <i class="fa fa-google"></i> Continue with Google
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>Already have an account? <a href="#" id="showLogin">Sign in</a></p>
+            </div>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <div class="login-card" id="forgotPasswordCard" style="display: none;">
+            <div class="login-header">
+                <img src="images/technology_18655646.gif" alt="EENG Logo" class="login-logo">
+                <h1>Reset Password</h1>
+                <p>Enter your email to receive reset link</p>
+            </div>
+            
+            <form class="login-form" id="forgotPasswordForm">
+                <div class="input-group">
+                    <i class="fa fa-envelope"></i>
+                    <input type="email" id="resetEmail" placeholder="Email Address" required>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    Send Reset Link <i class="fa fa-paper-plane"></i>
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <a href="#" id="backToLogin">
+                    <i class="fa fa-arrow-left"></i> Back to Login
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast"></div>
+    <script src="firebase-config.js"></script>
+    <script src="login.js"></script>
+</body>
+</html>

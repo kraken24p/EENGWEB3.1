@@ -21,74 +21,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const showForgotPasswordLinks = document.querySelectorAll('#showForgotPassword');
     
     // Password toggle functionality
-   // In login.js, update Google sign-in handler
-
-document.querySelectorAll('.social-btn.google').forEach(button => {
-    button.addEventListener('click', async function() {
-        const originalText = this.innerHTML;
-        this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Connecting...';
-        this.disabled = true;
-        
-        try {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            const result = await auth.signInWithPopup(provider);
-            const user = result.user;
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const icon = this.querySelector('i');
             
-            // Extract proper name
-            let userName = 'User';
-            if (user.displayName && user.displayName.trim()) {
-                userName = user.displayName;
-            } else if (user.email) {
-                userName = user.email.split('@')[0];
-                userName = userName.charAt(0).toUpperCase() + userName.slice(1);
-                userName = userName.replace(/[._]/g, ' ');
-            }
-            
-            // Check if user exists
-            const userSnapshot = await database.ref('users/' + user.uid).once('value');
-            
-            if (!userSnapshot.exists()) {
-                // New user - save with proper name
-                await database.ref('users/' + user.uid).set({
-                    name: userName,
-                    displayName: user.displayName || userName,
-                    email: user.email,
-                    photoURL: user.photoURL,
-                    createdAt: firebase.database.ServerValue.TIMESTAMP,
-                    lastLogin: firebase.database.ServerValue.TIMESTAMP,
-                    emailVerified: user.emailVerified,
-                    isAdmin: false,
-                    favorites: [],
-                    sessionsCompleted: 0,
-                    totalMinutes: 0
-                });
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
             } else {
-                // Existing user - update
-                const updates = {
-                    lastLogin: firebase.database.ServerValue.TIMESTAMP,
-                    emailVerified: user.emailVerified
-                };
-                
-                // Fix name if missing
-                const userData = userSnapshot.val();
-                if (!userData.name || userData.name === 'undefined' || !userData.name.trim()) {
-                    updates.name = userName;
-                }
-                
-                await database.ref('users/' + user.uid).update(updates);
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
-            
-            showToast('Google sign-in successful!');
-            setTimeout(() => window.location.href = 'index.html', 1000);
-            
-        } catch (error) {
-            console.error('Google sign-in error:', error);
-            this.innerHTML = originalText;
-            this.disabled = false;
-            showToast('Sign-in failed: ' + error.message, 'error');
-        }
+        });
     });
-});
     
     // Navigation between forms
     showSignupLinks.forEach(link => {
@@ -125,35 +74,6 @@ document.querySelectorAll('.social-btn.google').forEach(button => {
         }, 300);
     }
     
-    // ==========================================
-    // PASSWORD VALIDATION
-    // ==========================================
-    function validatePassword(password) {
-        const errors = [];
-        
-        if (password.length < 8) {
-            errors.push('at least 8 characters');
-        }
-        if (!/[A-Z]/.test(password)) {
-            errors.push('one uppercase letter');
-        }
-        if (!/[a-z]/.test(password)) {
-            errors.push('one lowercase letter');
-        }
-        if (!/[0-9]/.test(password)) {
-            errors.push('one number');
-        }
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-            errors.push('one special character');
-        }
-        
-        if (errors.length > 0) {
-            return 'Password must contain ' + errors.join(', ');
-        }
-        
-        return null;
-    }
-
     // Real-time password strength indicator
     const signupPassword = document.getElementById('signupPassword');
     if (signupPassword) {
@@ -272,71 +192,205 @@ document.querySelectorAll('.social-btn.google').forEach(button => {
     // ==========================================
     // FIREBASE SIGNUP
     // ==========================================
-    // In login.js signup form
+    if (signupForm) {
+        signupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match!', 'error');
+                return;
+            }
+            
+            // Ensure we have a name
+            let userName = name;
+            if (!userName || userName === '') {
+                userName = email.split('@')[0];
+                userName = userName.charAt(0).toUpperCase() + userName.slice(1);
+                userName = userName.replace(/[._]/g, ' ');
+            }
+            
+            const button = this.querySelector('.login-btn');
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Creating account...';
+            button.disabled = true;
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Update profile
+                await user.updateProfile({
+                    displayName: userName
+                });
 
-if (signupForm) {
-    signupForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const name = document.getElementById('signupName').value.trim();
-        const email = document.getElementById('signupEmail').value.trim();
-        const password = document.getElementById('signupPassword').value;
-        
-        // Ensure we have a name
-        let userName = name;
-        if (!userName || userName === '') {
-            userName = email.split('@')[0];
-            userName = userName.charAt(0).toUpperCase() + userName.slice(1);
-            userName = userName.replace(/[._]/g, ' ');
-        }
-        
-        const button = this.querySelector('.login-btn');
-        const originalText = button.innerHTML;
-        
-        button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Creating account...';
-        button.disabled = true;
-        
-        try {
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
+                // Send verification
+                await user.sendEmailVerification();
+                
+                // Save to database with all required fields
+                await database.ref('users/' + user.uid).set({
+                    name: userName,
+                    displayName: userName,
+                    email: email,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    lastLogin: firebase.database.ServerValue.TIMESTAMP,
+                    emailVerified: false,
+                    isAdmin: false,
+                    favorites: [],
+                    sessionsCompleted: 0,
+                    totalMinutes: 0,
+                    photoURL: null
+                });
+                
+                button.innerHTML = '<i class="fa fa-check"></i> Account Created!';
+                button.style.background = '#4CAF50';
+                
+                showToast('Account created! Please verify your email.', 'success');
+                
+                setTimeout(() => window.location.href = 'index.html', 2000);
+                
+            } catch (error) {
+                console.error('Signup error:', error);
+                button.innerHTML = originalText;
+                button.disabled = false;
+                
+                let errorMessage = 'Signup failed. Please try again.';
+                
+                switch(error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'This email is already registered.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email address.';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'Password is too weak. Use at least 6 characters.';
+                        break;
+                }
+                
+                showToast(errorMessage, 'error');
+            }
+        });
+    }
+    
+    // ==========================================
+    // FIXED GOOGLE SIGN-IN (SINGLE HANDLER)
+    // ==========================================
+    document.querySelectorAll('.social-btn.google').forEach(button => {
+        button.addEventListener('click', async function() {
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Connecting...';
+            this.disabled = true;
             
-            // Update profile
-            await user.updateProfile({
-                displayName: userName
-            });
-
-            // Send verification
-            await user.sendEmailVerification();
-            
-            // Save with proper name
-            await database.ref('users/' + user.uid).set({
-                name: userName,
-                displayName: userName,
-                email: email,
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                lastLogin: firebase.database.ServerValue.TIMESTAMP,
-                emailVerified: false,
-                isAdmin: false,
-                favorites: [],
-                sessionsCompleted: 0,
-                totalMinutes: 0
-            });
-            
-            button.innerHTML = '<i class="fa fa-check"></i> Account Created!';
-            button.style.background = '#4CAF50';
-            
-            showToast('Account created! Please verify your email.', 'success');
-            
-            setTimeout(() => window.location.href = 'index.html', 2000);
-            
-        } catch (error) {
-            console.error('Signup error:', error);
-            button.innerHTML = originalText;
-            button.disabled = false;
-            showToast('Signup failed: ' + error.message, 'error');
-        }
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({
+                    prompt: 'select_account'
+                });
+                
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                
+                console.log('✅ Google sign-in successful:', user.email);
+                
+                // Extract proper name
+                let userName = 'User';
+                if (user.displayName && user.displayName.trim()) {
+                    userName = user.displayName.trim();
+                } else if (user.email) {
+                    userName = user.email.split('@')[0];
+                    userName = userName.charAt(0).toUpperCase() + userName.slice(1);
+                    userName = userName.replace(/[._]/g, ' ');
+                }
+                
+                console.log('✅ User name:', userName);
+                
+                // Check if user exists
+                const userRef = database.ref('users/' + user.uid);
+                const userSnapshot = await userRef.once('value');
+                
+                if (!userSnapshot.exists()) {
+                    // New user - create profile
+                    console.log('📝 Creating new user profile...');
+                    await userRef.set({
+                        name: userName,
+                        displayName: user.displayName || userName,
+                        email: user.email,
+                        photoURL: user.photoURL || null,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        lastLogin: firebase.database.ServerValue.TIMESTAMP,
+                        emailVerified: user.emailVerified,
+                        isAdmin: false,
+                        favorites: [],
+                        sessionsCompleted: 0,
+                        totalMinutes: 0
+                    });
+                    console.log('✅ New user profile created');
+                } else {
+                    // Existing user - update login time
+                    console.log('📝 Updating existing user...');
+                    const updates = {
+                        lastLogin: firebase.database.ServerValue.TIMESTAMP,
+                        emailVerified: user.emailVerified
+                    };
+                    
+                    const userData = userSnapshot.val();
+                    if (!userData.name || userData.name === 'undefined' || !userData.name.trim()) {
+                        updates.name = userName;
+                        console.log('🔧 Fixed missing name');
+                    }
+                    
+                    if (user.photoURL) {
+                        updates.photoURL = user.photoURL;
+                    }
+                    
+                    await userRef.update(updates);
+                    console.log('✅ User updated');
+                }
+                
+                this.innerHTML = '<i class="fa fa-check"></i> Success!';
+                this.style.background = '#4CAF50';
+                showToast('Google sign-in successful!', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+                
+            } catch (error) {
+                console.error('❌ Google sign-in error:', error);
+                this.innerHTML = originalText;
+                this.disabled = false;
+                
+                let errorMessage = 'Sign-in failed. Please try again.';
+                
+                switch(error.code) {
+                    case 'auth/popup-closed-by-user':
+                        errorMessage = 'Sign-in cancelled.';
+                        break;
+                    case 'auth/popup-blocked':
+                        errorMessage = 'Popup blocked! Please allow popups.';
+                        break;
+                    case 'auth/cancelled-popup-request':
+                        errorMessage = 'Another sign-in is in progress.';
+                        break;
+                    case 'auth/account-exists-with-different-credential':
+                        errorMessage = 'Email already registered with different method.';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMessage = 'Network error. Check your connection.';
+                        break;
+                }
+                
+                showToast(errorMessage, 'error');
+            }
+        });
     });
-}
     
     // ==========================================
     // FIREBASE PASSWORD RESET
@@ -392,85 +446,12 @@ if (signupForm) {
             }
         });
     }
-    
-    // ==========================================
-    // GOOGLE SIGN-IN
-    // ==========================================
-    document.querySelectorAll('.social-btn.google').forEach(button => {
-        button.addEventListener('click', async function() {
-            const originalText = this.innerHTML;
-            this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Connecting...';
-            this.disabled = true;
-            
-            try {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                const result = await auth.signInWithPopup(provider);
-                const user = result.user;
-                
-                // Check if user data exists
-                const userSnapshot = await database.ref('users/' + user.uid).once('value');
-                
-                if (!userSnapshot.exists()) {
-                    // Create user document for new users
-                    await database.ref('users/' + user.uid).set({
-                        name: user.displayName,
-                        email: user.email,
-                        photoURL: user.photoURL,
-                        createdAt: firebase.database.ServerValue.TIMESTAMP,
-                        lastLogin: firebase.database.ServerValue.TIMESTAMP,
-                        emailVerified: user.emailVerified,
-                        isAdmin: false,
-                        favorites: [],
-                        sessionsCompleted: 0,
-                        totalMinutes: 0
-                    });
-                } else {
-                    // Update last login
-                    await database.ref('users/' + user.uid).update({
-                        lastLogin: firebase.database.ServerValue.TIMESTAMP,
-                        emailVerified: user.emailVerified
-                    });
-                }
-                
-                showToast('Google sign-in successful!', 'success');
-                
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Google sign-in error:', error);
-                this.innerHTML = originalText;
-                this.disabled = false;
-                
-                let errorMessage = 'Google sign-in failed.';
-                
-                switch(error.code) {
-                    case 'auth/popup-closed-by-user':
-                        errorMessage = 'Sign-in cancelled.';
-                        break;
-                    case 'auth/popup-blocked':
-                        errorMessage = 'Popup blocked by browser. Please allow popups.';
-                        break;
-                    case 'auth/cancelled-popup-request':
-                        errorMessage = 'Sign-in cancelled.';
-                        break;
-                    case 'auth/account-exists-with-different-credential':
-                        errorMessage = 'Account exists with different sign-in method.';
-                        break;
-                    case 'auth/network-request-failed':
-                        errorMessage = 'Network error. Check your connection.';
-                        break;
-                }
-                
-                showToast(errorMessage, 'error');
-            }
-        });
-    });
-    
-    // Toast notification function
+
+    // HELPER: Toast notification
     function showToast(message, type = 'success') {
         const toast = document.getElementById('toast');
+        if (!toast) return;
+        
         toast.textContent = message;
         toast.className = `toast ${type} show`;
         

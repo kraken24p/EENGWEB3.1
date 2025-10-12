@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 EENG Debug Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #00ff00;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #0f0f0f;
+            border: 2px solid #00ff00;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #1a1a1a;
+            border-left: 4px solid #00ff00;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #00ffff;
+        }
+
+        .log {
+            padding: 10px;
+            background: #000;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffaa00; }
+        .info { color: #00ffff; }
+
+        button {
+            background: linear-gradient(135deg, #00ff00, #00cc00);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 0, 0.4);
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 5px;
+        }
+
+        .badge-online { background: #00ff00; color: #000; }
+        .badge-offline { background: #ff0000; color: #fff; }
+        .badge-pending { background: #ffaa00; color: #000; }
+
+        pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            border: 1px solid #333;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .blinking { animation: blink 1s infinite; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 EENG COMPREHENSIVE DEBUG TOOL</h1>
+
+        <!-- Status Overview -->
+        <div class="section">
+            <h2>📊 System Status</h2>
+            <div id="statusBadges"></div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section">
+            <h2>⚡ Quick Actions</h2>
+            <div class="button-group">
+                <button onclick="testAll()">🔍 Run All Tests</button>
+                <button onclick="testGoogleSignIn()">🔐 Test Google Sign-In</button>
+                <button onclick="testDatabaseRead()">📖 Test Database Read</button>
+                <button onclick="testAnalyticsLoad()">📊 Test Analytics Load</button>
+                <button onclick="clearLogs()">🗑️ Clear Logs</button>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section">
+            <h2>📝 Real-Time Logs</h2>
+            <div class="log" id="logOutput"></div>
+        </div>
+
+        <!-- User Info -->
+        <div class="section">
+            <h2>👤 Current User Info</h2>
+            <div class="log" id="userInfo">Not logged in</div>
+        </div>
+
+        <!-- Database Data -->
+        <div class="section">
+            <h2>💾 Database Sample Data</h2>
+            <div class="log" id="databaseData">Loading...</div>
+        </div>
+
+        <!-- Fix Actions -->
+        <div class="section">
+            <h2>🔧 Quick Fixes</h2>
+            <div class="button-group">
+                <button onclick="fixUserNames()">Fix User Names</button>
+                <button onclick="createTestDownload()">Create Test Download</button>
+                <button onclick="verifyRules()">Verify Rules</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        let logs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            }[type];
+            
+            logs.push({ timestamp, message, type, icon });
+            updateLogDisplay();
+        }
+
+        function updateLogDisplay() {
+            const output = document.getElementById('logOutput');
+            output.innerHTML = logs.map(l => 
+                `<div class="${l.type}">[${l.timestamp}] ${l.icon} ${l.message}</div>`
+            ).join('');
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearLogs() {
+            logs = [];
+            updateLogDisplay();
+            log('Logs cleared', 'info');
+        }
+
+        function updateStatus(status) {
+            const badges = document.getElementById('statusBadges');
+            badges.innerHTML = Object.keys(status).map(key => {
+                const state = status[key];
+                const badgeClass = state === 'online' ? 'badge-online' : 
+                                  state === 'offline' ? 'badge-offline' : 'badge-pending';
+                return `<span class="status-badge ${badgeClass}">${key}: ${state}</span>`;
+            }).join('');
+        }
+
+        // Monitor Firebase connection
+        database.ref('.info/connected').on('value', (snapshot) => {
+            const connected = snapshot.val();
+            log(connected ? 'Firebase connected' : 'Firebase disconnected', 
+                connected ? 'success' : 'error');
+        });
+
+        // Monitor auth state
+        auth.onAuthStateChanged(async (user) => {
+            const userInfoDiv = document.getElementById('userInfo');
+            
+            if (user) {
+                log(`User logged in: ${user.email}`, 'success');
+                
+                try {
+                    const snapshot = await database.ref('users/' + user.uid).once('value');
+                    const userData = snapshot.val();
+                    
+                    userInfoDiv.innerHTML = `<pre>${JSON.stringify({
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                        emailVerified: user.emailVerified,
+                        isAdmin: userData?.isAdmin || false,
+                        name: userData?.name,
+                        createdAt: userData?.createdAt ? new Date(userData.createdAt).toLocaleString() : 'N/A'
+                    }, null, 2)}</pre>`;
+                    
+                    if (userData?.isAdmin) {
+                        log('✅ User is ADMIN', 'success');
+                    } else {
+                        log('⚠️ User is NOT admin', 'warning');
+                    }
+                } catch (error) {
+                    log('Error loading user data: ' + error.message, 'error');
+                    userInfoDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                }
+            } else {
+                log('No user logged in', 'warning');
+                userInfoDiv.innerHTML = '<span class="warning">Not logged in - <a href="login.html" style="color: #00ff00;">Login</a></span>';
+            }
+        });
+
+        async function testAll() {
+            log('🚀 Starting comprehensive test suite...', 'info');
+            clearLogs();
+            
+            await testFirebaseInit();
+            await testAuth();
+            await testDatabaseRead();
+            await testAnalyticsLoad();
+            
+            log('✅ All tests completed!', 'success');
+        }
+
+        async function testFirebaseInit() {
+            log('Testing Firebase initialization...', 'info');
+            if (firebase.apps.length > 0) {
+                log('✅ Firebase initialized', 'success');
+                return true;
+            } else {
+                log('❌ Firebase NOT initialized', 'error');
+                return false;
+            }
+        }
+
+        async function testAuth() {
+            log('Testing authentication...', 'info');
+            const user = auth.currentUser;
+            
+            if (user) {
+                log(`✅ Authenticated as: ${user.email}`, 'success');
+                return true;
+            } else {
+                log('❌ Not authenticated', 'error');
+                return false;
+            }
+        }
+
+        async function testDatabaseRead() {
+            log('Testing database read...', 'info');
+            
+            try {
+                const usersSnapshot = await database.ref('users').limitToFirst(3).once('value');
+                const usersData = usersSnapshot.val();
+                
+                if (usersData) {
+                    const count = Object.keys(usersData).length;
+                    log(`✅ Read ${count} users from database`, 'success');
+                    
+                    document.getElementById('databaseData').innerHTML = 
+                        `<pre>${JSON.stringify(usersData, null, 2)}</pre>`;
+                    return true;
+                } else {
+                    log('⚠️ No users found in database', 'warning');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Database read error: ${error.message}`, 'error');
+                document.getElementById('databaseData').innerHTML = 
+                    `<span class="error">Error: ${error.message}</span>`;
+                return false;
+            }
+        }
+
+        async function testAnalyticsLoad() {
+            log('Testing analytics data load...', 'info');
+            
+            try {
+                // Test users
+                const usersSnapshot = await database.ref('users').once('value');
+                const usersCount = usersSnapshot.numChildren();
+                log(`✅ Found ${usersCount} total users`, 'success');
+                
+                // Test downloads
+                try {
+                    const downloadsSnapshot = await database.ref('downloads').once('value');
+                    const downloadsCount = downloadsSnapshot.numChildren();
+                    log(`✅ Found ${downloadsCount} downloads`, 'success');
+                } catch (error) {
+                    log(`⚠️ Downloads node empty or inaccessible: ${error.message}`, 'warning');
+                }
+                
+                // Test favorites
+                const usersWithFavorites = [];
+                usersSnapshot.forEach(child => {
+                    const userData = child.val();
+                    if (userData.favorites) {
+                        usersWithFavorites.push(child.key);
+                    }
+                });
+                log(`✅ Found ${usersWithFavorites.length} users with favorites`, 'success');
+                
+                return true;
+            } catch (error) {
+                log(`❌ Analytics load error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testGoogleSignIn() {
+            log('Testing Google Sign-In popup...', 'info');
+            
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({
+                    prompt: 'select_account'
+                });
+                
+                log('Opening Google Sign-In popup...', 'info');
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                
+                log(`✅ Google Sign-In successful: ${user.email}`, 'success');
+                log(`Display Name: ${user.displayName}`, 'info');
+                log(`Photo URL: ${user.photoURL}`, 'info');
+                
+                // Check database write
+                const userRef = database.ref('users/' + user.uid);
+                const snapshot = await userRef.once('value');
+                
+                if (snapshot.exists()) {
+                    log('✅ User exists in database', 'success');
+                } else {
+                    log('⚠️ User NOT in database, creating...', 'warning');
+                }
+                
+                return true;
+            } catch (error) {
+                log(`❌ Google Sign-In error: ${error.code} - ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function fixUserNames() {
+            log('Starting user name fix...', 'info');
+            const user = auth.currentUser;
+            
+            if (!user) {
+                log('❌ Must be logged in', 'error');
+                return;
+            }
+            
+            try {
+                const snapshot = await database.ref('users').once('value');
+                const usersData = snapshot.val();
+                let fixed = 0;
+                const updates = {};
+                
+                Object.keys(usersData).forEach(uid => {
+                    const userData = usersData[uid];
+                    if (!userData.name || userData.name === 'undefined' || !userData.name.trim()) {
+                        let newName = userData.displayName || 
+                                     userData.email?.split('@')[0] || 
+                                     'User';
+                        updates[`users/${uid}/name`] = newName;
+                        fixed++;
+                    }
+                });
+                
+                if (fixed > 0) {
+                    await database.ref().update(updates);
+                    log(`✅ Fixed ${fixed} user names`, 'success');
+                } else {
+                    log('✅ All user names are correct', 'success');
+                }
+            } catch (error) {
+                log(`❌ Fix error: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestDownload() {
+            log('Creating test download entry...', 'info');
+            const user = auth.currentUser;
+            
+            if (!user) {
+                log('❌ Must be logged in', 'error');
+                return;
+            }
+            
+            try {
+                const testDownload = {
+                    userId: user.uid,
+                    userEmail: user.email,
+                    userName: user.displayName || user.email.split('@')[0],
+                    courseName: 'TEST-101 - Test Course',
+                    courseCode: 'TEST-101',
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    url: 'https://example.com/test',
+                    method: 'test'
+                };
+                
+                await database.ref('downloads').push(testDownload);
+                log('✅ Test download created successfully', 'success');
+            } catch (error) {
+                log(`❌ Error creating test download: ${error.message}`, 'error');
+            }
+        }
+
+        async function verifyRules() {
+            log('Verifying Firebase rules...', 'info');
+            const user = auth.currentUser;
+            
+            if (!user) {
+                log('❌ Must be logged in', 'error');
+                return;
+            }
+            
+            try {
+                // Test read access
+                await database.ref('users/' + user.uid).once('value');
+                log('✅ Can read own user data', 'success');
+                
+                // Test write access
+                await database.ref('users/' + user.uid + '/lastActivity').set(Date.now());
+                log('✅ Can write own user data', 'success');
+                
+                // Test downloads read (admin only)
+                try {
+                    await database.ref('downloads').limitToFirst(1).once('value');
+                    log('✅ Can read downloads (you are admin)', 'success');
+                } catch (e) {
+                    log('⚠️ Cannot read downloads (not admin or no data)', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Rules verification error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            log('🚀 Debug tool loaded', 'success');
+            setTimeout(() => testFirebaseInit(), 1000);
+        });
+    </script>
+</body>
+</html>

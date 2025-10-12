@@ -940,60 +940,100 @@ function initKeyboardShortcuts() {
         }
     });
 }
-
-/// ===========================
-// DOWNLOAD TRACKING (FIREBASE INTEGRATED) - IMPROVED
+// ===========================
+// IMPROVED DOWNLOAD TRACKING (FIREBASE INTEGRATED)
 // ===========================
 function initDownloadTracking() {
+    console.log('Initializing download tracking...');
+    
     document.querySelectorAll('a[href*="drive.google.com"]').forEach(link => {
         link.addEventListener('click', async function(e) {
-            // Try multiple methods to get course name
             let courseName = 'Unknown';
             
-            // Method 1: From table row
+            // Method 1: From table row (IMPROVED)
             const tableRow = this.closest('tr');
             if (tableRow) {
                 const codeCell = tableRow.querySelector('td:first-child strong');
                 const nameCell = tableRow.querySelector('td:nth-child(2)');
                 if (codeCell && nameCell) {
-                    courseName = `${codeCell.textContent.trim()} - ${nameCell.textContent.trim()}`;
+                    const code = codeCell.textContent.trim();
+                    const name = nameCell.textContent.trim();
+                    courseName = `${code} - ${name}`;
+                    console.log('Found course from table:', courseName);
                 }
             }
             
-            // Method 2: From figure caption
+            // Method 2: From figure caption (IMPROVED)
             if (courseName === 'Unknown') {
-                const figcaption = this.closest('figcaption');
-                if (figcaption) {
-                    const h4 = figcaption.querySelector('h4');
+                const figure = this.closest('figure');
+                if (figure) {
+                    const h4 = figure.querySelector('figcaption h4');
                     if (h4) {
                         courseName = h4.textContent.trim();
+                        console.log('Found course from figure:', courseName);
                     }
+                }
+            }
+            
+            // Method 3: From parent elements (NEW)
+            if (courseName === 'Unknown') {
+                const parent = this.closest('[data-course]');
+                if (parent) {
+                    courseName = parent.getAttribute('data-course');
+                    console.log('Found course from data attribute:', courseName);
                 }
             }
             
             const user = auth.currentUser;
             if (user) {
                 try {
+                    // Get user data for proper name
+                    const userSnapshot = await database.ref('users/' + user.uid).once('value');
+                    const userData = userSnapshot.val();
+                    
+                    let userName = 'Unknown User';
+                    if (userData) {
+                        if (userData.name && userData.name !== 'undefined' && userData.name.trim()) {
+                            userName = userData.name;
+                        } else if (userData.displayName && userData.displayName !== 'undefined') {
+                            userName = userData.displayName;
+                        } else if (user.email) {
+                            userName = user.email.split('@')[0];
+                            userName = userName.charAt(0).toUpperCase() + userName.slice(1);
+                            userName = userName.replace(/[._]/g, ' ');
+                        }
+                    }
+                    
                     // Track download in Firebase
                     const downloadRef = database.ref('downloads').push();
                     await downloadRef.set({
                         userId: user.uid,
                         userEmail: user.email,
+                        userName: userName,
                         courseName: courseName,
                         timestamp: firebase.database.ServerValue.TIMESTAMP,
                         url: this.href
                     });
-                    console.log('Download tracked:', courseName);
+                    
+                    console.log('✅ Download tracked successfully:', {
+                        user: userName,
+                        course: courseName
+                    });
+                    
+                    showNotification(`Opening ${courseName}...`);
                 } catch (error) {
-                    console.error('Error tracking download:', error);
+                    console.error('❌ Error tracking download:', error);
+                    showNotification('Opening material...');
                 }
+            } else {
+                console.log('⚠️ User not logged in, download not tracked');
+                showNotification('Opening material...');
             }
-            
-            showNotification(`Opening ${courseName}...`);
         });
     });
+    
+    console.log('Download tracking initialized for', document.querySelectorAll('a[href*="drive.google.com"]').length, 'links');
 }
-
 // ===========================
 // LOGOUT FUNCTIONALITY
 // ===========================

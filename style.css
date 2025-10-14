@@ -2586,8 +2586,8 @@ textarea:focus {
    =========================== */
    @media screen and (max-width: 768px) {
     .profile-img {
-        width: 120px !important;   /* Increased from 50px */
-        height: 120px !important;  /* Increased from 50px */
+        width: 90px !important;   /* Increased from 50px */
+        height: 90px !important;  /* Increased from 50px */
         margin-left: -25px !important; /* Adjusted overlap */
         border-width: 3px;
     }
@@ -3142,4 +3142,628 @@ img {
 /* ===================================================================
    END OF ENHANCED STYLES
    ================================================================== */
-   
+   /* ===================================================================
+   COMPREHENSIVE MOBILE RESPONSIVENESS FIXES
+   Add these styles at the END of your style.css file
+   ================================================================== */
+
+/* ===========================
+   1. FIX HOME PAGE ALIGNMENT ON ALL PHONES
+   =========================== */
+
+/* Prevent content overflow and centering issues */
+body {
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100vw;
+}
+
+#banner {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.banner-text {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Center all banner content properly on mobile */
+@media screen and (max-width: 768px) {
+    .hero-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 0 15px;
+    }
+    
+    .hero-left,
+    .hero-right {
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .banner-text h1,
+    .tagline,
+    .welcome-text-modern,
+    .stats-section,
+    .banner-btn,
+    .profile-showcase {
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .welcome-text-modern {
+        width: 100%;
+    }
+    
+    .welcome-text-modern p {
+        text-align: center;
+    }
+}
+
+/* ===========================
+   2. HIDE SERVICES SECTION ON MOBILE
+   =========================== */
+
+@media screen and (max-width: 768px) {
+    #service {
+        display: none !important;
+    }
+}
+
+/* ===========================
+   3. REMOVE COLUMNS FROM COURSE MATERIALS TABLE ON MOBILE
+   =========================== */
+
+@media screen and (max-width: 768px) {
+    /* Hide Downloads column */
+    .course-table th:nth-child(3),
+    .course-table td:nth-child(3) {
+        display: none !important;
+    }
+    
+    /* Hide Status column */
+    .course-table th:nth-child(4),
+    .course-table td:nth-child(4) {
+        display: none !important;
+    }
+    
+    /* Hide favorite buttons in Actions column on mobile */
+    .course-table .favorite-btn {
+        display: none !important;
+    }
+    
+    /* Make remaining table cells responsive */
+    .course-table table {
+        font-size: 13px;
+    }
+    
+    .course-table th,
+    .course-table td {
+        padding: 10px 8px;
+    }
+}
+
+/* Stack table on very small phones */
+@media screen and (max-width: 480px) {
+    .course-table table,
+    .course-table thead,
+    .course-table tbody,
+    .course-table th,
+    .course-table td,
+    .course-table tr {
+        display: block;
+    }
+    
+    .course-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    .course-table tr {
+        margin-bottom: 15px;
+        border: 2px solid var(--primary-color);
+        border-radius: 10px;
+        padding: 15px;
+        background: var(--white);
+    }
+    
+    .course-table td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+    
+    .course-table td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        font-weight: bold;
+        text-align: left;
+        color: var(--primary-color);
+        font-size: 12px;
+    }
+    
+    /* Only show Unit Code, Unit Name, and Actions on mobile */
+    .course-table td:nth-child(1):before { content: "Code"; }
+    .course-table td:nth-child(2):before { content: "Unit"; }
+    .course-table td:nth-child(5):before { content: "Actions"; }
+    
+    /* Make access button full width on mobile */
+    .table-action-btn {
+        width: 100%;
+        justify-content: center;
+        margin-right: 0 !important;
+    }
+}
+
+/* ===========================
+   4. RESPONSIVE FIXES FOR ALL SECTIONS
+   =========================== */
+
+/* Feature Section */
+@media screen and (max-width: 768px) {
+    .features-img-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .features-img img {
+        height: 250px;
+    }
+}
+
+/* Library Section - Already responsive but ensure smooth */
+@media screen and (max-width: 768px) {
+    .library-content-box {
+        padding: 20px 15px;
+    }
+    
+    .image-gallery {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .book-image-wrapper img {
+        height: 220px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .image-gallery {
+        grid-template-columns: 1fr;
+    }
+    
+    .book-image-wrapper img {
+        height: 280px;
+    }
+}
+
+/* Projects Section */
+@media screen and (max-width: 768px) {
+    .projects-container {
+        grid-template-columns: 1fr;
+        padding: 15px;
+    }
+    
+    .project-card {
+        margin-bottom: 20px;
+    }
+}
+
+/* Testimonial/Album Section */
+@media screen and (max-width: 768px) {
+    .testimonial-row {
+        flex-direction: column;
+    }
+    
+    .testimonial-col {
+        flex-basis: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .user img {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+/* Study Timer */
+@media screen and (max-width: 768px) {
+    .timer-container {
+        padding: 25px 20px;
+    }
+    
+    .time-circle {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .timer-text h2 {
+        font-size: 36px;
+    }
+    
+    .timer-controls {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .timer-btn {
+        flex: 1;
+        min-width: 100px;
+    }
+    
+    .timer-presets {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .preset-btn {
+        width: 100%;
+    }
+}
+
+/* Newsletter Section */
+@media screen and (max-width: 768px) {
+    .newsletter-text h2 {
+        font-size: 28px;
+    }
+    
+    .newsletter-text p {
+        font-size: 16px;
+    }
+    
+    .newsletter-form {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .newsletter-form input,
+    .newsletter-form button {
+        width: 100%;
+    }
+}
+
+/* FAQ Section */
+@media screen and (max-width: 768px) {
+    .faq-container {
+        padding: 0 15px;
+    }
+    
+    .faq-question {
+        padding: 15px 20px;
+        font-size: 15px;
+    }
+    
+    .faq-answer {
+        padding: 0 20px 15px;
+    }
+}
+
+/* Footer Section */
+@media screen and (max-width: 768px) {
+    .contact-wrapper {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .contact-form-section,
+    .contact-info-section {
+        width: 100%;
+    }
+    
+    .footer-bottom {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        text-align: center;
+    }
+    
+    .footer-links ul {
+        text-align: center;
+    }
+    
+    .social-icons {
+        justify-content: center;
+    }
+}
+
+/* ===========================
+   5. REDUCE OVERSIZED FEATURES ON MOBILE
+   =========================== */
+
+@media screen and (max-width: 768px) {
+    /* Reduce stat card sizes */
+    .stat-item {
+        padding: 15px 20px;
+    }
+    
+    .stat-item h3 {
+        font-size: 28px;
+    }
+    
+    .stat-item p {
+        font-size: 12px;
+    }
+    
+    /* Reduce feature cards */
+    .feature-card {
+        padding: 15px;
+    }
+    
+    .feature-card i {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+    
+    .feature-card h3 {
+        font-size: 16px;
+    }
+    
+    .feature-card p {
+        font-size: 13px;
+    }
+    
+    /* Reduce profile images */
+    .profile-img {
+        width: 50px;
+        height: 50px;
+        margin-left: -15px;
+        border-width: 2px;
+    }
+    
+    /* Reduce button sizes */
+    .cta-btn {
+        padding: 12px 25px;
+        font-size: 14px;
+        min-width: 150px;
+    }
+    
+    /* Reduce header logo */
+    .logo {
+        width: 60px;
+        height: 60px;
+    }
+    
+    /* Reduce menu button */
+    #menuBtn,
+    #darkModeToggle {
+        width: 45px;
+        height: 45px;
+        right: 20px;
+    }
+    
+    #darkModeToggle {
+        top: 80px;
+    }
+    
+    /* Reduce section padding */
+    section {
+        padding: 40px 0 !important;
+    }
+    
+    .title-text h1 {
+        font-size: 32px;
+    }
+    
+    /* Reduce contact cards */
+    .contact-card {
+        padding: 20px;
+    }
+    
+    .contact-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .contact-icon i {
+        font-size: 20px;
+    }
+    
+    .contact-card h3 {
+        font-size: 18px;
+    }
+    
+    .contact-card p {
+        font-size: 14px;
+    }
+}
+
+/* Extra small phones - further reductions */
+@media screen and (max-width: 480px) {
+    .banner-text h1 {
+        font-size: 40px !important;
+    }
+    
+    .tagline {
+        font-size: 16px !important;
+    }
+    
+    .stat-item {
+        padding: 12px 15px;
+    }
+    
+    .stat-item h3 {
+        font-size: 24px;
+    }
+    
+    .feature-card {
+        padding: 12px;
+    }
+    
+    .feature-card i {
+        font-size: 24px;
+    }
+    
+    .feature-card h3 {
+        font-size: 14px;
+    }
+    
+    .feature-card p {
+        font-size: 12px;
+    }
+    
+    .profile-img {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .cta-btn {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+}
+
+/* ===========================
+   6. FIX CONTENT OVERFLOW ISSUES
+   =========================== */
+
+@media screen and (max-width: 768px) {
+    /* Prevent all horizontal scrolling */
+    * {
+        max-width: 100%;
+    }
+    
+    /* Fix table overflow */
+    .course-table,
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Fix image overflow */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    /* Fix container widths */
+    .service-box,
+    .feature-box,
+    .library-content-box,
+    .projects-container,
+    .testimonial-row,
+    .faq-container,
+    .newsletter-content {
+        width: 95% !important;
+        max-width: 100%;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+/* ===========================
+   7. IMPROVE TOUCH TARGETS FOR MOBILE
+   =========================== */
+
+@media screen and (max-width: 768px) {
+    /* Make buttons larger for easier tapping */
+    .btn,
+    .cta-btn,
+    .table-action-btn,
+    .filter-btn,
+    .timer-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Increase spacing between clickable elements */
+    nav ul li {
+        margin: 20px;
+    }
+    
+    nav ul li a {
+        padding: 12px 15px;
+    }
+    
+    /* Make form inputs larger */
+    input,
+    textarea,
+    select {
+        min-height: 44px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+/* ===========================
+   8. SMOOTH SCROLLING ON MOBILE
+   =========================== */
+
+@media screen and (max-width: 768px) {
+    html {
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ===========================
+   9. FIX NAVIGATION ISSUES
+   =========================== */
+
+@media screen and (max-width: 768px) {
+    #sideNav {
+        width: 280px;
+        right: -280px;
+    }
+    
+    #sideNav.open {
+        right: 0;
+        box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    nav ul {
+        padding-top: 20px;
+    }
+    
+    nav ul li {
+        margin: 15px 20px;
+    }
+    
+    nav ul li a {
+        font-size: 15px;
+        padding: 12px 15px;
+    }
+}
+
+/* ===========================
+   10. LANDSCAPE ORIENTATION FIXES
+   =========================== */
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    #banner {
+        min-height: auto;
+        padding: 60px 20px 40px;
+    }
+    
+    .stats-section {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .stat-item {
+        min-width: 120px;
+    }
+}
+
+/* ===================================================================
+   END OF MOBILE RESPONSIVE FIXES
+   ================================================================== */

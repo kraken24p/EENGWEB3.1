@@ -515,7 +515,7 @@
     <script src="firebase-config.js"></script>
     
    <script>
-    // Fixed Analytics Dashboard Script
+    // Complete Fixed Analytics Dashboard Script
 let allUsers = [];
 let allDownloads = [];
 let filteredData = { users: [], downloads: [] };
@@ -665,142 +665,7 @@ function updateTopDownloads() {
         }
     });
 
-    // Sort by time (most recent first)
-    activities.sort((a, b) => {
-        const timeA = typeof a.time === 'number' ? a.time : 0;
-        const timeB = typeof b.time === 'number' ? b.time : 0;
-        return timeB - timeA;
-    });
-    
-    const recent = activities.slice(0, 20);
-
-    if (recent.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No recent activity</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = recent.map(a => {
-        const timeStr = typeof a.time === 'number' 
-            ? new Date(a.time).toLocaleString() 
-            : 'Unknown time';
-            
-        return `
-        <tr>
-            <td data-label="User">${a.user || 'Unknown'}</td>
-            <td data-label="Email">${a.email || 'Unknown'}</td>
-            <td data-label="Action">${a.action || 'Unknown action'}</td>
-            <td data-label="Time">${timeStr}</td>
-        </tr>
-        `;
-    }).join('');
-}
-
-function setupFilters() {
-    const today = new Date();
-    document.getElementById('endDate').valueAsDate = today;
-    
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 1);
-    document.getElementById('startDate').valueAsDate = startDate;
-
-    document.getElementById('quickFilter').addEventListener('change', function() {
-        const value = this.value;
-        const end = new Date();
-        let start = new Date();
-
-        switch(value) {
-            case 'today':
-                start = new Date();
-                break;
-            case 'week':
-                start.setDate(start.getDate() - 7);
-                break;
-            case 'month':
-                start.setMonth(start.getMonth() - 1);
-                break;
-            case 'year':
-                start.setFullYear(start.getFullYear() - 1);
-                break;
-            case 'all':
-                start = new Date(0);
-                break;
-        }
-
-        if (value !== 'all') {
-            document.getElementById('startDate').valueAsDate = start;
-            document.getElementById('endDate').valueAsDate = end;
-        }
-    });
-}
-
-function applyFilters() {
-    const startDate = new Date(document.getElementById('startDate').value);
-    const endDate = new Date(document.getElementById('endDate').value);
-    endDate.setHours(23, 59, 59, 999);
-
-    filteredData.users = allUsers.filter(u => {
-        if (!u.createdAt) return true;
-        return u.createdAt >= startDate.getTime() && u.createdAt <= endDate.getTime();
-    });
-
-    filteredData.downloads = allDownloads.filter(d => {
-        if (!d.timestamp) return true;
-        return d.timestamp >= startDate.getTime() && d.timestamp <= endDate.getTime();
-    });
-
-    updateDashboard();
-}
-
-function exportToCSV() {
-    const { users, downloads } = filteredData;
-    
-    let csv = 'Users Report\n';
-    csv += 'Name,Email,Sign-up Method,Join Date,Study Minutes,Sessions\n';
-    users.forEach(u => {
-        csv += `"${u.name || 'N/A'}","${u.email}","${u.photoURL ? 'Google' : 'Email'}","${new Date(u.createdAt).toLocaleDateString()}","${u.totalMinutes || 0}","${u.sessionsCompleted || 0}"\n`;
-    });
-
-    csv += '\n\nDownloads Report\n';
-    csv += 'Course Name,User Email,Download Date\n';
-    downloads.forEach(d => {
-        const user = users.find(u => u.uid === d.userId);
-        csv += `"${d.courseName}","${user ? user.email : 'Unknown'}","${new Date(d.timestamp).toLocaleString()}"\n`;
-    });
-
-    downloadFile(csv, 'analytics-report.csv', 'text/csv');
-}
-
-function exportToJSON() {
-    const data = {
-        generatedAt: new Date().toISOString(),
-        users: filteredData.users,
-        downloads: filteredData.downloads,
-        statistics: {
-            totalUsers: filteredData.users.length,
-            totalDownloads: filteredData.downloads.length
-        }
-    };
-
-    downloadFile(JSON.stringify(data, null, 2), 'analytics-report.json', 'application/json');
-}
-
-function downloadFile(content, filename, type) {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-function printReport() {
-    window.print();
-}
-
-console.log('✅ Analytics dashboard script loaded'); count
+    // Sort by count
     const sorted = Object.entries(downloadCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
@@ -1027,7 +892,142 @@ function updateRecentActivity() {
         }
     });
 
-    // Sort by
+    // Sort by time (most recent first)
+    activities.sort((a, b) => {
+        const timeA = typeof a.time === 'number' ? a.time : 0;
+        const timeB = typeof b.time === 'number' ? b.time : 0;
+        return timeB - timeA;
+    });
+    
+    const recent = activities.slice(0, 20);
+
+    if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No recent activity</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = recent.map(a => {
+        const timeStr = typeof a.time === 'number' 
+            ? new Date(a.time).toLocaleString() 
+            : 'Unknown time';
+            
+        return `
+        <tr>
+            <td data-label="User">${a.user || 'Unknown'}</td>
+            <td data-label="Email">${a.email || 'Unknown'}</td>
+            <td data-label="Action">${a.action || 'Unknown action'}</td>
+            <td data-label="Time">${timeStr}</td>
+        </tr>
+        `;
+    }).join('');
+}
+
+function setupFilters() {
+    const today = new Date();
+    document.getElementById('endDate').valueAsDate = today;
+    
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 1);
+    document.getElementById('startDate').valueAsDate = startDate;
+
+    document.getElementById('quickFilter').addEventListener('change', function() {
+        const value = this.value;
+        const end = new Date();
+        let start = new Date();
+
+        switch(value) {
+            case 'today':
+                start = new Date();
+                break;
+            case 'week':
+                start.setDate(start.getDate() - 7);
+                break;
+            case 'month':
+                start.setMonth(start.getMonth() - 1);
+                break;
+            case 'year':
+                start.setFullYear(start.getFullYear() - 1);
+                break;
+            case 'all':
+                start = new Date(0);
+                break;
+        }
+
+        if (value !== 'all') {
+            document.getElementById('startDate').valueAsDate = start;
+            document.getElementById('endDate').valueAsDate = end;
+        }
+    });
+}
+
+function applyFilters() {
+    const startDate = new Date(document.getElementById('startDate').value);
+    const endDate = new Date(document.getElementById('endDate').value);
+    endDate.setHours(23, 59, 59, 999);
+
+    filteredData.users = allUsers.filter(u => {
+        if (!u.createdAt) return true;
+        return u.createdAt >= startDate.getTime() && u.createdAt <= endDate.getTime();
+    });
+
+    filteredData.downloads = allDownloads.filter(d => {
+        if (!d.timestamp) return true;
+        return d.timestamp >= startDate.getTime() && d.timestamp <= endDate.getTime();
+    });
+
+    updateDashboard();
+}
+
+function exportToCSV() {
+    const { users, downloads } = filteredData;
+    
+    let csv = 'Users Report\n';
+    csv += 'Name,Email,Sign-up Method,Join Date,Study Minutes,Sessions\n';
+    users.forEach(u => {
+        csv += `"${u.name || 'N/A'}","${u.email}","${u.photoURL ? 'Google' : 'Email'}","${new Date(u.createdAt).toLocaleDateString()}","${u.totalMinutes || 0}","${u.sessionsCompleted || 0}"\n`;
+    });
+
+    csv += '\n\nDownloads Report\n';
+    csv += 'Course Name,User Email,Download Date\n';
+    downloads.forEach(d => {
+        const user = users.find(u => u.uid === d.userId);
+        csv += `"${d.courseName}","${user ? user.email : 'Unknown'}","${new Date(d.timestamp).toLocaleString()}"\n`;
+    });
+
+    downloadFile(csv, 'analytics-report.csv', 'text/csv');
+}
+
+function exportToJSON() {
+    const data = {
+        generatedAt: new Date().toISOString(),
+        users: filteredData.users,
+        downloads: filteredData.downloads,
+        statistics: {
+            totalUsers: filteredData.users.length,
+            totalDownloads: filteredData.downloads.length
+        }
+    };
+
+    downloadFile(JSON.stringify(data, null, 2), 'analytics-report.json', 'application/json');
+}
+
+function downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function printReport() {
+    window.print();
+}
+
+console.log('✅ Analytics dashboard script loaded');
    </script>
 </body>
 </html>

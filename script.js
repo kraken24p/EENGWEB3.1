@@ -134,6 +134,71 @@ function initNavigation() {
     window.addEventListener('scroll', highlightNavigation);
 }
 
+function hideAdminMenuForNonAdmins() {
+    auth.onAuthStateChanged(async (user) => {
+        const adminLink = document.querySelector('a[href="admin.html"]');
+        const servicesLink = document.querySelector('a[href="#service"]');
+        
+        if (!adminLink) return;
+        
+        // Check if on mobile device
+        const isMobile = window.innerWidth <= 768;
+        
+        // Hide services link on mobile
+        if (servicesLink && isMobile) {
+            servicesLink.parentElement.style.display = 'none';
+        }
+        
+        // Show services on desktop
+        if (servicesLink && !isMobile) {
+            servicesLink.parentElement.style.display = 'block';
+        }
+        
+        if (!user) {
+            // Not logged in - hide admin link
+            adminLink.parentElement.style.display = 'none';
+            return;
+        }
+
+        try {
+            // Check if user is admin
+            const userSnapshot = await database.ref('users/' + user.uid).once('value');
+            const userData = userSnapshot.val();
+
+            if (userData && userData.isAdmin) {
+                // User is admin - show admin link
+                adminLink.parentElement.style.display = 'block';
+            } else {
+                // Regular user - hide admin link
+                adminLink.parentElement.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error checking admin status:', error);
+            // On error, hide admin link to be safe
+            adminLink.parentElement.style.display = 'none';
+        }
+    });
+    
+    // Re-check on window resize for services link
+    window.addEventListener('resize', () => {
+        const servicesLink = document.querySelector('a[href="#service"]');
+        const isMobile = window.innerWidth <= 768;
+        
+        if (servicesLink) {
+            servicesLink.parentElement.style.display = isMobile ? 'none' : 'block';
+        }
+    });
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    hideAdminMenuForNonAdmins();
+});
+
+// Also call it after auth state changes
+auth.onAuthStateChanged(() => {
+    setTimeout(hideAdminMenuForNonAdmins, 500);
+});
 // ===========================
 // DARK MODE
 // ===========================

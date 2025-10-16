@@ -2294,6 +2294,65 @@ body.dark-mode .testimonial-col:hover {
            padding: 3px 10px;
        }
        
+        /* TESTIMONIAL/ALBUM SECTION */
+#testimonial {
+    padding: 40px 0;
+}
+
+.testimonial-row {
+    width: 92%;
+    gap: 16px;
+}
+
+.testimonial-col {
+    padding: 16px;
+}
+
+.testimonial-col p {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.user {
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.user img {
+    width: 50px;
+    height: 50px;
+}
+
+.user-info h4 {
+    font-size: 13px;
+    margin-bottom: 3px;
+}
+
+.user-info h3 a {
+    font-size: 12px;
+}
+/* TESTIMONIAL MOBILE */
+.testimonial-row {
+    width: 95%;
+}
+
+.testimonial-col {
+    padding: 12px;
+}
+
+.user img {
+    width: 45px;
+    height: 45px;
+}
+
+.user-info h4 {
+    font-size: 12px;
+}
+
+.testimonial-col p {
+    font-size: 12px;
+}
        /* TIMER SECTION */
        #study-timer {
            padding: 40px 0 30px;

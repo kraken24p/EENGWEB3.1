@@ -2,7 +2,6 @@
 // INITIALIZATION & CONFIGURATION
 // ===========================
 
-// Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded - Initializing...');
     
@@ -28,10 +27,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initDownloadTracking();
     initLogout();
     initUserGreeting();
+    initAdminNavigation();
+    updateNavigationVisibility();
 });
 
 // ===========================
-// LOADING SCREEN (OPTIMIZED)
+// LOADING SCREEN
 // ===========================
 function initLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
@@ -90,11 +91,7 @@ function initNavigation() {
 
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (sideNav.classList.contains('open')) {
-            closeNav();
-        } else {
-            openNav();
-        }
+        sideNav.classList.contains('open') ? closeNav() : openNav();
     });
 
     closeSideNav.addEventListener('click', closeNav);
@@ -109,6 +106,7 @@ function initNavigation() {
         link.addEventListener('click', closeNav);
     });
     
+    // Active navigation highlighting
     const sections = document.querySelectorAll('section[id]');
     const navLinks = document.querySelectorAll('nav ul li a');
 
@@ -134,71 +132,57 @@ function initNavigation() {
     window.addEventListener('scroll', highlightNavigation);
 }
 
-function hideAdminMenuForNonAdmins() {
+// ===========================
+// NAVIGATION VISIBILITY CONTROL
+// ===========================
+function updateNavigationVisibility() {
+    const isMobile = window.innerWidth <= 768;
+    
+    // Hide Services link on mobile
+    const servicesLinks = document.querySelectorAll('a[href="#service"]');
+    servicesLinks.forEach(link => {
+        if (link && link.parentElement) {
+            link.parentElement.style.display = isMobile ? 'none' : 'block';
+        }
+    });
+    
+    // Handle Admin link visibility based on user role
     auth.onAuthStateChanged(async (user) => {
-        const adminLink = document.querySelector('a[href="admin.html"]');
-        const servicesLink = document.querySelector('a[href="#service"]');
-        
-        if (!adminLink) return;
-        
-        // Check if on mobile device
-        const isMobile = window.innerWidth <= 768;
-        
-        // Hide services link on mobile
-        if (servicesLink && isMobile) {
-            servicesLink.parentElement.style.display = 'none';
-        }
-        
-        // Show services on desktop
-        if (servicesLink && !isMobile) {
-            servicesLink.parentElement.style.display = 'block';
-        }
+        const adminLinks = document.querySelectorAll('a[href="admin.html"]');
         
         if (!user) {
-            // Not logged in - hide admin link
-            adminLink.parentElement.style.display = 'none';
+            adminLinks.forEach(link => {
+                if (link && link.parentElement) {
+                    link.parentElement.style.display = 'none';
+                }
+            });
             return;
         }
 
         try {
-            // Check if user is admin
             const userSnapshot = await database.ref('users/' + user.uid).once('value');
             const userData = userSnapshot.val();
 
-            if (userData && userData.isAdmin) {
-                // User is admin - show admin link
-                adminLink.parentElement.style.display = 'block';
-            } else {
-                // Regular user - hide admin link
-                adminLink.parentElement.style.display = 'none';
-            }
+            adminLinks.forEach(link => {
+                if (link && link.parentElement) {
+                    link.parentElement.style.display = (userData && userData.isAdmin) ? 'block' : 'none';
+                }
+            });
         } catch (error) {
             console.error('Error checking admin status:', error);
-            // On error, hide admin link to be safe
-            adminLink.parentElement.style.display = 'none';
-        }
-    });
-    
-    // Re-check on window resize for services link
-    window.addEventListener('resize', () => {
-        const servicesLink = document.querySelector('a[href="#service"]');
-        const isMobile = window.innerWidth <= 768;
-        
-        if (servicesLink) {
-            servicesLink.parentElement.style.display = isMobile ? 'none' : 'block';
+            adminLinks.forEach(link => {
+                if (link && link.parentElement) {
+                    link.parentElement.style.display = 'none';
+                }
+            });
         }
     });
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    hideAdminMenuForNonAdmins();
-});
+// Update on resize and auth change
+window.addEventListener('resize', updateNavigationVisibility);
+auth.onAuthStateChanged(() => setTimeout(updateNavigationVisibility, 500));
 
-// Also call it after auth state changes
-auth.onAuthStateChanged(() => {
-    setTimeout(hideAdminMenuForNonAdmins, 500);
-});
 // ===========================
 // DARK MODE
 // ===========================
@@ -221,7 +205,7 @@ function initDarkMode() {
             darkModeToggle.innerHTML = '<i class="fa fa-sun-o"></i>';
             showNotification('Dark mode enabled');
         } else {
-            localStorage.setItem('darkMode', null);
+            localStorage.setItem('darkMode', 'disabled');
             darkModeToggle.innerHTML = '<i class="fa fa-moon-o"></i>';
             showNotification('Light mode enabled');
         }
@@ -256,11 +240,7 @@ function initScrollEffects() {
             lastScrollPosition = window.pageYOffset;
             if (!ticking) {
                 window.requestAnimationFrame(() => {
-                    if (lastScrollPosition > 300) {
-                        backToTop.classList.add('visible');
-                    } else {
-                        backToTop.classList.remove('visible');
-                    }
+                    backToTop.classList.toggle('visible', lastScrollPosition > 300);
                     ticking = false;
                 });
                 ticking = true;
@@ -269,10 +249,7 @@ function initScrollEffects() {
 
         backToTop.addEventListener('click', (e) => {
             e.preventDefault();
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
     
@@ -298,9 +275,8 @@ function initScrollEffects() {
 // COUNTER ANIMATION FOR STATS
 // ===========================
 function animateCounter(element, target, duration = 2000) {
-    const start = 0;
     const increment = target / (duration / 16);
-    let current = start;
+    let current = 0;
     
     const timer = setInterval(() => {
         current += increment;
@@ -353,14 +329,9 @@ function initAnimations() {
         observer.observe(card);
     });
     
-    document.querySelectorAll('.feature-card').forEach(card => {
-        card.classList.add('scale-in');
-        observer.observe(card);
-    });
-    
-    document.querySelectorAll('.stat-item').forEach(stat => {
-        stat.classList.add('scale-in');
-        observer.observe(stat);
+    document.querySelectorAll('.feature-card, .stat-item').forEach(element => {
+        element.classList.add('scale-in');
+        observer.observe(element);
     });
 }
 
@@ -384,34 +355,31 @@ function initSearch() {
                 const text = figure.textContent.toLowerCase();
                 figure.style.display = text.includes(searchTerm) ? '' : 'none';
             });
+            
+            if (clearGlobalSearch) {
+                clearGlobalSearch.style.display = this.value ? 'flex' : 'none';
+            }
         });
         
         if (clearGlobalSearch) {
-            globalSearch.addEventListener('input', function() {
-                clearGlobalSearch.style.display = this.value ? 'flex' : 'none';
-            });
-            
             clearGlobalSearch.addEventListener('click', () => {
                 globalSearch.value = '';
                 clearGlobalSearch.style.display = 'none';
-                document.querySelectorAll('.course-table tbody tr').forEach(row => {
-                    row.style.display = '';
-                });
-                document.querySelectorAll('.image-gallery figure').forEach(figure => {
-                    figure.style.display = '';
+                document.querySelectorAll('.course-table tbody tr, .image-gallery figure').forEach(el => {
+                    el.style.display = '';
                 });
                 globalSearch.focus();
             });
         }
     }
 }
+
 // ===========================
-// FAVORITES SYSTEM (FIREBASE INTEGRATED) - FIXED
+// FAVORITES SYSTEM (FIREBASE INTEGRATED)
 // ===========================
 function initFavorites() {
     let favorites = [];
 
-    // Load favorites from Firebase
     auth.onAuthStateChanged(async user => {
         if (user) {
             try {
@@ -429,20 +397,12 @@ function initFavorites() {
     function updateFavoriteButtons() {
         document.querySelectorAll('.favorite-btn').forEach(btn => {
             const course = btn.getAttribute('data-course');
-            if (favorites.includes(course)) {
-                btn.classList.add('favorited');
-                const icon = btn.querySelector('i');
-                if (icon) {
-                    icon.classList.remove('fa-heart-o');
-                    icon.classList.add('fa-heart');
-                }
-            } else {
-                btn.classList.remove('favorited');
-                const icon = btn.querySelector('i');
-                if (icon) {
-                    icon.classList.remove('fa-heart');
-                    icon.classList.add('fa-heart-o');
-                }
+            const icon = btn.querySelector('i');
+            const isFavorited = favorites.includes(course);
+            
+            btn.classList.toggle('favorited', isFavorited);
+            if (icon) {
+                icon.className = isFavorited ? 'fa fa-heart' : 'fa fa-heart-o';
             }
         });
     }
@@ -460,47 +420,34 @@ function initFavorites() {
 
             const course = this.getAttribute('data-course');
             const icon = this.querySelector('i');
-            
-            // Disable button during operation
             this.disabled = true;
             
             try {
                 if (favorites.includes(course)) {
-                    // Remove from favorites
                     favorites = favorites.filter(fav => fav !== course);
                     this.classList.remove('favorited');
-                    if (icon) {
-                        icon.classList.remove('fa-heart');
-                        icon.classList.add('fa-heart-o');
-                    }
+                    if (icon) icon.className = 'fa fa-heart-o';
                     showNotification(`${course} removed from favorites`);
                 } else {
-                    // Add to favorites
                     favorites.push(course);
                     this.classList.add('favorited');
-                    if (icon) {
-                        icon.classList.remove('fa-heart-o');
-                        icon.classList.add('fa-heart');
-                    }
+                    if (icon) icon.className = 'fa fa-heart';
                     showNotification(`${course} added to favorites`);
                 }
                 
-                // Save to Firebase
                 await database.ref('users/' + user.uid + '/favorites').set(favorites);
                 
             } catch (error) {
                 console.error('Error updating favorites:', error);
                 showNotification('Failed to update favorites: ' + error.message);
-                
-                // Revert UI changes on error
                 updateFavoriteButtons();
             } finally {
-                // Re-enable button
                 this.disabled = false;
             }
         });
     });
 }
+
 // ===========================
 // LIBRARY SEARCH AND FILTER
 // ===========================
@@ -520,6 +467,7 @@ function initLibrary() {
         if (clearSearch) {
             clearSearch.style.display = this.value ? 'flex' : 'none';
         }
+        filterBooks();
     });
 
     if (clearSearch) {
@@ -537,11 +485,7 @@ function initLibrary() {
             libraryGallery.classList.add('expanded');
             toggleLibraryBtn.setAttribute('aria-expanded', 'true');
             toggleLibraryBtn.innerHTML = '<i class="fa fa-eye-slash"></i> Hide Books';
-            
-            if (loadMoreBtn) {
-                const visibleBooks = Array.from(books).filter(b => !b.classList.contains('hidden'));
-                loadMoreBtn.style.display = visibleBooks.length > 6 ? 'inline-flex' : 'none';
-            }
+            applyPagination();
         }
     }
 
@@ -581,7 +525,6 @@ function initLibrary() {
         
         const candidates = Array.from(books).filter(b => !b.classList.contains('hidden'));
         
-        // FIX: Use requestAnimationFrame for smoother rendering on mobile
         requestAnimationFrame(() => {
             candidates.forEach((b, i) => {
                 b.classList.toggle('hidden-hard', i >= visibleCount);
@@ -607,8 +550,7 @@ function initLibrary() {
             const category = book.getAttribute('data-category');
             const matchesText = title.includes(searchTerm);
             const matchesCategory = activeFilter === 'all' || category === activeFilter;
-            const shouldShow = matchesText && matchesCategory;
-            book.classList.toggle('hidden', !shouldShow);
+            book.classList.toggle('hidden', !(matchesText && matchesCategory));
         });
         
         if (searchTerm.length > 0) {
@@ -621,7 +563,6 @@ function initLibrary() {
     }
 
     bookSearch.addEventListener('focus', ensureLibraryOpen);
-    bookSearch.addEventListener('input', filterBooks);
 
     filterButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -630,54 +571,22 @@ function initLibrary() {
 
             filterButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-
-            books.forEach(book => {
-                if (filter === 'all') {
-                    book.classList.remove('hidden');
-                } else {
-                    const category = book.getAttribute('data-category');
-                    book.classList.toggle('hidden', category !== filter);
-                }
-            });
-
+            filterBooks();
             ensureLibraryOpen();
-            resetPagination();
-            applyPagination();
-            updateCounts();
         });
     });
 
     if (loadMoreBtn) {
         loadMoreBtn.addEventListener('click', () => {
-            const previousCount = visibleCount;
             visibleCount = 999;
-            
-            // FIX: Smooth reveal with staggered animation on mobile
-            const isMobile = window.innerWidth <= 768;
-            if (isMobile) {
-                // Reveal books gradually for better mobile performance
-                const candidates = Array.from(books).filter(b => !b.classList.contains('hidden'));
-                candidates.forEach((book, index) => {
-                    if (index >= previousCount) {
-                        setTimeout(() => {
-                            book.classList.remove('hidden-hard');
-                        }, (index - previousCount) * 50); // 50ms delay between each
-                    }
-                });
-                
-                setTimeout(() => {
-                    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-                }, (candidates.length - previousCount) * 50);
-            } else {
-                // Desktop: instant reveal
-                applyPagination();
-            }
+            applyPagination();
         });
     }
 
     if (toggleLibraryBtn) {
         toggleLibraryBtn.addEventListener('click', () => {
             const isExpanded = toggleLibraryBtn.getAttribute('aria-expanded') === 'true';
+            
             if (isExpanded) {
                 libraryGallery.classList.add('collapsed');
                 libraryGallery.classList.remove('expanded');
@@ -686,17 +595,14 @@ function initLibrary() {
                 visibleCount = 6;
                 applyPagination();
             } else {
-                // FIX: Add smooth opening with scroll prevention
                 libraryGallery.classList.remove('collapsed');
                 libraryGallery.classList.add('expanded');
                 toggleLibraryBtn.setAttribute('aria-expanded', 'true');
                 toggleLibraryBtn.innerHTML = '<i class="fa fa-eye-slash"></i> Hide Books';
                 visibleCount = 6;
                 
-                // FIX: Use setTimeout to ensure DOM is ready before pagination
                 setTimeout(() => {
                     applyPagination();
-                    // Smooth scroll with offset for mobile
                     const isMobile = window.innerWidth <= 768;
                     const scrollOffset = isMobile ? 100 : 0;
                     const elementPosition = libraryGallery.getBoundingClientRect().top + window.pageYOffset;
@@ -839,7 +745,6 @@ function initTimer() {
     let totalMinutes = 0;
 
     const timerDisplay = document.getElementById('timerDisplay');
-    const timerStatus = document.getElementById('timerStatus');
     const startBtn = document.getElementById('startTimer');
     const pauseBtn = document.getElementById('pauseTimer');
     const resetBtn = document.getElementById('resetTimer');
@@ -850,7 +755,6 @@ function initTimer() {
 
     if (!timerDisplay || !startBtn) return;
 
-    // Load timer stats from Firebase
     auth.onAuthStateChanged(async user => {
         if (user) {
             try {
@@ -918,7 +822,6 @@ function initTimer() {
                 totalMinutes += minutes;
                 if (totalMinutesDisplay) totalMinutesDisplay.textContent = totalMinutes;
                 
-                // Save to Firebase
                 saveTimerStats();
                 
                 if ('Notification' in window && Notification.permission === 'granted') {
@@ -959,14 +862,6 @@ function initTimer() {
             timeLeft = minutes * 60;
             pauseTimer();
             updateTimerDisplay();
-            
-            if (timerStatus) {
-                if (minutes >= 20) {
-                    timerStatus.textContent = 'Focus Time';
-                } else {
-                    timerStatus.textContent = 'Break Time';
-                }
-            }
         });
     });
     
@@ -1005,24 +900,22 @@ function initKeyboardShortcuts() {
         }
     });
 }
- // ENHANCED DOWNLOAD TRACKING SYSTEM
-// Replace the initDownloadTracking() function in script.js with this:
 
+// ===========================
+// DOWNLOAD TRACKING SYSTEM
+// ===========================
 function initDownloadTracking() {
-    console.log('🔄 Initializing enhanced download tracking...');
+    console.log('📄 Initializing download tracking...');
     
-    // Find ALL download links (Google Drive, PDFs, etc.)
     const downloadLinks = document.querySelectorAll('a[href*="drive.google.com"], a[href*=".pdf"]');
     console.log(`📊 Found ${downloadLinks.length} download links`);
     
-    downloadLinks.forEach((link, index) => {
+    downloadLinks.forEach((link) => {
         link.addEventListener('click', async function(e) {
-            // Don't prevent default - allow download to proceed
-            
             let courseName = 'Unknown Material';
             let courseCode = '';
             
-            // METHOD 1: Get from table row (HIGHEST PRIORITY)
+            // Method 1: Get from table row (highest priority)
             const tableRow = this.closest('tr');
             if (tableRow) {
                 const cells = tableRow.querySelectorAll('td');
@@ -1034,55 +927,32 @@ function initDownloadTracking() {
                         courseCode = codeCell.textContent.trim();
                         const courseFull = nameCell.textContent.trim();
                         courseName = `${courseCode} - ${courseFull}`;
-                        console.log(`✅ Method 1 (Table): ${courseName}`);
                     }
                 }
             }
             
-            // METHOD 2: Get from figure/book card
+            // Method 2: Get from figure/book card
             if (courseName === 'Unknown Material') {
                 const figure = this.closest('figure');
                 if (figure) {
                     const heading = figure.querySelector('figcaption h4');
                     if (heading && heading.textContent.trim()) {
                         courseName = heading.textContent.trim();
-                        console.log(`✅ Method 2 (Figure): ${courseName}`);
                     }
                 }
             }
             
-            // METHOD 3: Get from data attribute
+            // Method 3: Get from data attribute
             if (courseName === 'Unknown Material') {
                 const parent = this.closest('[data-course]');
                 if (parent) {
                     courseName = parent.getAttribute('data-course');
-                    console.log(`✅ Method 3 (Data attribute): ${courseName}`);
                 }
             }
             
-            // METHOD 4: Extract from link text
-            if (courseName === 'Unknown Material') {
-                const linkText = this.textContent.trim();
-                if (linkText && linkText.length > 3 && !linkText.includes('Download')) {
-                    courseName = linkText;
-                    console.log(`✅ Method 4 (Link text): ${courseName}`);
-                }
-            }
-            
-            // METHOD 5: Extract from parent text
-            if (courseName === 'Unknown Material') {
-                const parentText = this.parentElement?.textContent;
-                if (parentText && parentText.length > 5) {
-                    courseName = parentText.trim().substring(0, 100);
-                    console.log(`✅ Method 5 (Parent text): ${courseName}`);
-                }
-            }
-            
-            // Track download if user is logged in
             const user = auth.currentUser;
             if (user) {
                 try {
-                    // Get user data with timeout protection
                     const userRef = database.ref('users/' + user.uid);
                     const timeoutPromise = new Promise((_, reject) => 
                         setTimeout(() => reject(new Error('Timeout')), 5000)
@@ -1095,7 +965,6 @@ function initDownloadTracking() {
                     
                     const userData = userSnapshot.val();
                     
-                    // Extract user name safely
                     let userName = 'Unknown User';
                     if (userData) {
                         if (userData.name && userData.name !== 'undefined' && userData.name.trim()) {
@@ -1111,7 +980,6 @@ function initDownloadTracking() {
                         }
                     }
                     
-                    // Create download record
                     const downloadData = {
                         userId: user.uid,
                         userEmail: user.email || 'unknown@email.com',
@@ -1123,7 +991,6 @@ function initDownloadTracking() {
                         method: 'click'
                     };
                     
-                    // Save to Firebase (non-blocking)
                     const downloadRef = database.ref('downloads').push();
                     await downloadRef.set(downloadData);
                     
@@ -1137,10 +1004,8 @@ function initDownloadTracking() {
                     
                 } catch (error) {
                     console.error('❌ Download tracking failed:', error);
-                    // Don't show error to user - allow download to proceed
                 }
             } else {
-                console.log('⚠️ User not logged in - download not tracked');
                 showNotification('📥 Opening material...');
             }
         });
@@ -1149,18 +1014,6 @@ function initDownloadTracking() {
     console.log(`✅ Download tracking initialized for ${downloadLinks.length} links`);
 }
 
-// HELPER: Show notification
-function showNotification(message, duration = 3000) {
-    const toast = document.getElementById('notification-toast');
-    if (!toast) return;
-    
-    toast.textContent = message;
-    toast.classList.add('show');
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, duration);
-}
 // ===========================
 // LOGOUT FUNCTIONALITY
 // ===========================
@@ -1189,39 +1042,20 @@ function initLogout() {
 }
 
 // ===========================
-// ERROR HANDLING
+// ADMIN NAVIGATION
 // ===========================
-window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
-    showNotification('Something went wrong. Please refresh the page.', 5000);
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
-    showNotification('An error occurred. Please try again.', 5000);
-});
-
-console.log('✅ EENG Website Initialized Successfully!');
-// Add this to your script.js file to enhance admin navigation
-
-// ===========================
-// ADMIN NAVIGATION ENHANCEMENT
-// ===========================
-
 function initAdminNavigation() {
     auth.onAuthStateChanged(async (user) => {
         if (!user) return;
 
         try {
-            // Check if user is admin
             const userSnapshot = await database.ref('users/' + user.uid).once('value');
             const userData = userSnapshot.val();
 
             if (userData && userData.isAdmin) {
-                // User is admin - show admin features
                 showAdminFeatures();
+                setTimeout(showAdminQuickStats, 1000);
             } else {
-                // Regular user - hide admin features
                 hideAdminFeatures();
             }
         } catch (error) {
@@ -1231,7 +1065,6 @@ function initAdminNavigation() {
 }
 
 function showAdminFeatures() {
-    // Add admin badge to navigation
     const sideNav = document.getElementById('sideNav');
     if (sideNav && !document.getElementById('adminBadge')) {
         const adminLi = sideNav.querySelector('a[href="admin.html"]')?.parentElement;
@@ -1252,7 +1085,6 @@ function showAdminFeatures() {
         }
     }
 
-    // Add admin toolbar to page (bottom-left indicator)
     if (!document.getElementById('adminToolbar')) {
         const toolbar = document.createElement('div');
         toolbar.id = 'adminToolbar';
@@ -1280,26 +1112,12 @@ function showAdminFeatures() {
 }
 
 function hideAdminFeatures() {
-    // Remove admin badge and analytics link
     const adminBadge = document.getElementById('adminBadge');
     if (adminBadge) adminBadge.remove();
 
-    const analyticsLinks = document.querySelectorAll('a[href="analytics.html"]');
-    analyticsLinks.forEach(link => link.parentElement?.remove());
-
-    // Remove admin toolbar
     const toolbar = document.getElementById('adminToolbar');
     if (toolbar) toolbar.remove();
 }
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    initAdminNavigation();
-});
-
-// ===========================
-// ADMIN QUICK STATS WIDGET (Optional)
-// ===========================
 
 async function showAdminQuickStats() {
     const user = auth.currentUser;
@@ -1311,14 +1129,12 @@ async function showAdminQuickStats() {
 
         if (!userData || !userData.isAdmin) return;
 
-        // Load quick stats
         const usersSnapshot = await database.ref('users').once('value');
         const downloadsSnapshot = await database.ref('downloads').once('value');
 
         const totalUsers = usersSnapshot.numChildren();
         const totalDownloads = downloadsSnapshot.numChildren();
 
-        // Update admin toolbar with stats
         const toolbar = document.getElementById('adminToolbar');
         if (toolbar) {
             const statsSpan = document.createElement('span');
@@ -1331,47 +1147,17 @@ async function showAdminQuickStats() {
     }
 }
 
-// Call this after showing admin features
-setTimeout(() => {
-    showAdminQuickStats();
-}, 2000);
-
 // ===========================
-// ADMIN NOTIFICATION SYSTEM
+// ERROR HANDLING
 // ===========================
+window.addEventListener('error', (event) => {
+    console.error('Global error:', event.error);
+    showNotification('Something went wrong. Please refresh the page.', 5000);
+});
 
-async function checkAdminNotifications() {
-    const user = auth.currentUser;
-    if (!user) return;
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled promise rejection:', event.reason);
+    showNotification('An error occurred. Please try again.', 5000);
+});
 
-    try {
-        const userSnapshot = await database.ref('users/' + user.uid).once('value');
-        const userData = userSnapshot.val();
-
-        if (!userData || !userData.isAdmin) return;
-
-        // Check for new users in last 24 hours
-        const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-        const usersSnapshot = await database.ref('users')
-            .orderByChild('createdAt')
-            .startAt(oneDayAgo)
-            .once('value');
-
-        const newUsers = usersSnapshot.numChildren();
-
-        if (newUsers > 0) {
-            // Show notification
-            setTimeout(() => {
-                showNotification(`📢 ${newUsers} new user(s) registered in last 24 hours!`);
-            }, 3000);
-        }
-    } catch (error) {
-        console.error('Error checking notifications:', error);
-    }
-}
-
-// Check notifications every 5 minutes
-setInterval(checkAdminNotifications, 5 * 60 * 1000);
-checkAdminNotifications(); // Initial check
-
-console.log('✅ Admin navigation enhancements loaded');
+console.log('✅ EENG Website Initialized Successfully!');

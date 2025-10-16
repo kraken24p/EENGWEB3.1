@@ -1148,13 +1148,105 @@
        background: rgba(0, 150, 136, 0.2);
    }
    
-   /* ===========================
-      TESTIMONIAL SECTION
-      =========================== */
-   #testimonial {
-       display: none !important;
-   }
-   
+  
+/* ===========================
+   TESTIMONIAL SECTION
+   =========================== */
+#testimonial {
+    width: 100%;
+    padding: 60px 0;
+    background: var(--light-bg);
+}
+
+body.dark-mode #testimonial {
+    background: #1a1a1a;
+}
+
+.testimonial-row {
+    width: 90%;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    align-items: stretch;
+}
+
+.testimonial-col {
+    padding: 24px;
+    border-radius: var(--border-radius);
+    background: var(--white);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: all 0.4s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+body.dark-mode .testimonial-col {
+    background: #2d2d2d;
+}
+
+.testimonial-col:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+body.dark-mode .testimonial-col:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+}
+
+.testimonial-col p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-color);
+    flex-grow: 1;
+    margin-bottom: 16px;
+}
+
+.user {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 14px;
+}
+
+.user img {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.user-info h4 {
+    font-size: 16px;
+    color: var(--text-color);
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.user-info i {
+    color: var(--primary-color);
+    margin-left: 4px;
+    font-size: 12px;
+}
+
+.user-info h3 {
+    margin: 0;
+}
+
+.user-info h3 a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.user-info h3 a:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
+}
    /* ===========================
       STUDY TIMER
       =========================== */
